@@ -9,77 +9,80 @@
     <title>私人持仓推演</title>
     <style>
         :root {
-            /* 颜色饱和度全面降低，偏向专业金融软件的沉稳配色 */
+            /* 专业金融软件的沉稳配色 */
             --bg-color: #f5f5f7;
             --card-bg: #ffffff;
             --text-main: #2c2c2e;
             --text-muted: #8e8e93;
-            --red-up: #e53935;    /* 沉稳红 */
-            --green-down: #43a047;  /* 沉稳绿 */
-            --blue-btn: #5c6bc0;    /* 灰蓝色，不刺眼 */
+            --red-up: #e53935;    
+            --green-down: #43a047;  
+            --blue-btn: #5c6bc0;    
+            --separator: #e5e5ea;
+            --nav-bg: rgba(249, 249, 249, 0.94);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
+        /* 核心优化：锁定外壳，使用 100dvh 完美贴合 iPhone，消除底部白边 */
+        html, body { 
+            margin: 0; padding: 0; 
+            width: 100vw; height: 100dvh; 
+            overflow: hidden; 
             background-color: var(--bg-color); 
-            margin: 0; 
-            padding: 20px 16px calc(30px + env(safe-area-inset-bottom)) 16px; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             color: var(--text-main); 
-            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .header-spacer { height: env(safe-area-inset-top); margin-bottom: 10px; }
+        .header-spacer { height: env(safe-area-inset-top); flex-shrink: 0; }
 
+        /* 内容区容器，自适应填满剩余空间，并独立滚动 */
+        .main-container { 
+            flex: 1; 
+            position: relative; 
+            overflow: hidden; 
+        }
+
+        .tab-content { 
+            position: absolute; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+            display: none; 
+            animation: fadeIn 0.2s ease-out;
+            padding: 16px;
+            /* 底部留出导航栏和小白条的安全距离 */
+            padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
+        }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ====== 卡片与通用组件 ====== */
         .card { 
             background: var(--card-bg); 
-            border-radius: 12px; /* 圆角稍微收敛，更专业 */
+            border-radius: 12px; 
             padding: 20px; 
             margin-bottom: 16px; 
             box-shadow: 0 2px 16px rgba(0,0,0,0.03); 
         }
 
-        h2 { 
-            margin: 0 0 16px 0; 
-            font-size: 17px; 
-            font-weight: 600; 
-            letter-spacing: -0.2px;
-            display: flex;
-            align-items: center;
-        }
+        h2 { margin: 0 0 16px 0; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; display: flex; align-items: center; }
 
-        .input-group { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 12px 0;
-            border-bottom: 0.5px solid #e5e5ea;
-        }
+        .input-group { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid var(--separator); }
         .input-group:last-child { border-bottom: none; padding-bottom: 0; }
         .input-group label { font-size: 15px; color: var(--text-main); font-weight: 500;}
         .input-group input { 
-            width: 140px; 
-            padding: 8px 12px; 
-            background: #f5f5f7;
-            border: none; 
-            border-radius: 6px; 
-            text-align: right; 
-            font-size: 16px;
-            font-weight: 600;
-            outline: none;
-            color: var(--text-main);
+            width: 140px; padding: 8px 12px; background: #f5f5f7; border: none; 
+            border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; 
+            outline: none; color: var(--text-main);
         }
         .input-group input:focus { background: #e5e5ea; }
 
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .stat-box { 
-            background: rgba(245, 245, 247, 0.8); 
-            padding: 16px; 
-            border-radius: 8px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            background: rgba(245, 245, 247, 0.8); padding: 16px; border-radius: 8px; 
+            display: flex; flex-direction: column; justify-content: center;
         }
         .stat-box .label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; }
         .stat-box .value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; transition: color 0.3s ease; }
@@ -88,18 +91,18 @@
         .text-green { color: var(--green-down); }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; text-align: right; }
-        th { color: var(--text-muted); font-weight: 500; padding-bottom: 12px; border-bottom: 0.5px solid #e5e5ea; font-size: 12px;}
+        th { color: var(--text-muted); font-weight: 500; padding-bottom: 12px; border-bottom: 0.5px solid var(--separator); font-size: 12px;}
         td { padding: 12px 0; border-bottom: 0.5px solid #f5f5f7; font-variant-numeric: tabular-nums; }
         tr:last-child td { border-bottom: none; }
         th:first-child, td:first-child { text-align: left; }
 
-        button { 
+        button.main-btn { 
             width: 100%; background: var(--blue-btn); color: white; border: none; 
             padding: 16px; border-radius: 10px; font-size: 16px; font-weight: 600;
-            margin-top: 8px; cursor: pointer; transition: opacity 0.2s;
+            margin-bottom: 16px; cursor: pointer; transition: opacity 0.2s;
             box-shadow: 0 4px 10px rgba(92, 107, 192, 0.2);
         }
-        button:active { opacity: 0.8; }
+        button.main-btn:active { opacity: 0.8; }
         
         .rate-badge {
             display: inline-block; padding: 4px 8px; border-radius: 4px;
@@ -116,11 +119,28 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(67, 160, 71, 0); }
         }
 
+        /* ====== 底部导航栏 ====== */
+        .bottom-nav { 
+            position: absolute; 
+            bottom: 0; left: 0; width: 100%; 
+            height: calc(56px + env(safe-area-inset-bottom)); 
+            background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+            border-top: 0.5px solid rgba(0,0,0,0.1); 
+            display: flex; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            z-index: 100; 
+            flex-shrink: 0; 
+        }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; padding-top: 4px;}
+        .nav-item.active { color: var(--blue-btn); }
+        .nav-icon { width: 24px; height: 24px; margin-bottom: 3px; fill: currentColor; }
+        .nav-item svg path { transition: all 0.2s; }
+
         /* ====== K线图弹窗专属样式 ====== */
         .chart-btn {
             background: rgba(92, 107, 192, 0.1); color: var(--blue-btn);
             border: none; padding: 6px 12px; border-radius: 6px;
-            font-size: 13px; font-weight: 600; margin: 0; box-shadow: none; width: auto;
+            font-size: 13px; font-weight: 600; margin: 0; box-shadow: none; width: auto; cursor: pointer;
         }
         .modal-overlay {
             visibility: hidden; position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
@@ -140,80 +160,100 @@
         .seg-item { flex: 1; text-align: center; padding: 6px 0; font-size: 13px; font-weight: 500; border-radius: 4px; cursor: pointer; color: #555; }
         .seg-item.active { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); color: var(--text-main); font-weight: 600; }
         .chart-img { width: 100%; height: auto; min-height: 200px; border-radius: 4px; mix-blend-mode: multiply; }
-        .close-btn { background: #e5e5ea; color: #333; box-shadow: none; margin-top: 16px; }
+        .close-btn { width: 100%; background: #e5e5ea; color: #333; border: none; padding: 14px; border-radius: 8px; font-weight: 600; margin-top: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="header-spacer"></div>
 
-    <div class="card">
-        <h2>参数设置</h2>
-        <div class="input-group">
-            <label>股票代码</label>
-            <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
+    <div class="main-container">
+        <div id="tab-personal" class="tab-content active">
+            <div class="card">
+                <h2>参数设置</h2>
+                <div class="input-group">
+                    <label>股票代码</label>
+                    <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
+                </div>
+                <div class="input-group">
+                    <label>初始总成本</label>
+                    <input type="number" id="cost" value="385000">
+                </div>
+                <div class="input-group">
+                    <label>持仓股数</label>
+                    <input type="number" id="shares" value="26200">
+                </div>
+                <div class="input-group">
+                    <label>预期日涨幅(%)</label>
+                    <input type="number" id="dailyGrowth" value="10" step="0.1">
+                </div>
+            </div>
+
+            <button id="refreshBtn" class="main-btn" onclick="refreshData(false)">手动强制刷新</button>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 style="margin: 0; display: flex; align-items: center;">
+                        <span id="stockNameDisplay">实时看板</span> 
+                        <div class="live-dot" title="实时同步中"></div>
+                    </h2>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="chart-btn" onclick="openChart()">行情走势</button>
+                        <div id="profitRate" class="rate-badge">--</div>
+                    </div>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="stat-box">
+                        <div class="label">最新股价</div>
+                        <div class="value" id="currentPrice">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">当前市值</div>
+                        <div class="value" id="marketValue">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">回本股价</div>
+                        <div class="value" id="breakevenPrice">--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">浮动盈亏</div>
+                        <div class="value" id="profit">--</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="input-group">
-            <label>初始总成本</label>
-            <input type="number" id="cost" value="385000">
-        </div>
-        <div class="input-group">
-            <label>持仓股数</label>
-            <input type="number" id="shares" value="26200">
-        </div>
-        <div class="input-group">
-            <label>预期日涨幅(%)</label>
-            <input type="number" id="dailyGrowth" value="10" step="0.1">
+
+        <div id="tab-projection" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 style="margin: 0;">T+10 预期推演</h2>
+                    <span id="projStockName" style="font-size: 14px; color: var(--text-muted); font-weight: 500;">--</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>交易日</th>
+                            <th>预期股价</th>
+                            <th>预期市值</th>
+                            <th>单日浮动</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectionTable">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <button id="refreshBtn" onclick="refreshData(false)">手动强制刷新</button>
-
-    <div class="card" style="margin-top: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h2 style="margin: 0; display: flex; align-items: center;">
-                <span id="stockNameDisplay">实时看板</span> 
-                <div class="live-dot" title="实时同步中"></div>
-            </h2>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="chart-btn" onclick="openChart()">行情走势</button>
-                <div id="profitRate" class="rate-badge">--</div>
-            </div>
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-personal" onclick="switchTab('personal')">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <div>个人</div>
         </div>
-        
-        <div class="grid-2">
-            <div class="stat-box">
-                <div class="label">最新股价</div>
-                <div class="value" id="currentPrice">--</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">当前市值</div>
-                <div class="value" id="marketValue">--</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">回本股价</div>
-                <div class="value" id="breakevenPrice">--</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">浮动盈亏</div>
-                <div class="value" id="profit">--</div>
-            </div>
+        <div class="nav-item" id="nav-projection" onclick="switchTab('projection')">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 16H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V9h10v2z"/></svg>
+            <div>预期</div>
         </div>
-    </div>
-
-    <div class="card">
-        <h2>T+10 预期推演</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>交易日</th>
-                    <th>预期股价</th>
-                    <th>预期市值</th>
-                    <th>单日浮动</th>
-                </tr>
-            </thead>
-            <tbody id="projectionTable">
-            </tbody>
-        </table>
     </div>
 
     <div class="modal-overlay" id="chartModal" onclick="closeChart()">
@@ -231,6 +271,18 @@
     </div>
 
     <script>
+        // ================= 标签切换逻辑 =================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.getElementById(`nav-${tabName}`).classList.add('active');
+            
+            // 切换时静默刷新一次，保证数据最新
+            refreshData(true);
+        }
+
+        // ================= 核心计算与数据拉取 =================
         function loadSavedParams() {
             const saved = localStorage.getItem('stockAppParams');
             if (saved) {
@@ -300,19 +352,21 @@
             const growthRate = parseFloat(params.growth) / 100;
 
             try {
-                // 1. 获取最新股价
+                // 1. 获取最新股价和名称
                 const stockInfo = await fetchStockData(params.code);
                 const realPrice = stockInfo.price;
                 
+                // 两个页面都更新股票名称
                 document.getElementById('stockNameDisplay').innerText = stockInfo.name;
+                document.getElementById('projStockName').innerText = `${stockInfo.name} (${params.code.toUpperCase()})`;
                 
-                // 2. 根据最新股价，重新计算所有依赖数据
+                // 2. 根据最新股价，重新计算
                 const marketValue = realPrice * shares;
                 const profit = marketValue - cost;
                 const profitRate = (profit / cost) * 100;
                 const breakevenPrice = cost / shares;
 
-                // 3. 渲染四宫格看板
+                // 3. 渲染四宫格看板（第一页）
                 document.getElementById('currentPrice').innerText = realPrice.toFixed(2);
                 document.getElementById('breakevenPrice').innerText = breakevenPrice.toFixed(2);
                 document.getElementById('marketValue').innerText = formatNum(marketValue);
@@ -327,7 +381,7 @@
                 if(profitRate > 0) { rateEl.style.backgroundColor = 'rgba(229, 57, 53, 0.1)'; }
                 else if(profitRate < 0) { rateEl.style.backgroundColor = 'rgba(67, 160, 71, 0.1)'; }
 
-                // 4. 根据最新股价，重新计算并渲染 T+10 推演表
+                // 4. 根据最新股价，重新计算并渲染推演表（第二页）
                 const tbody = document.getElementById('projectionTable');
                 tbody.innerHTML = ''; 
                 
@@ -400,7 +454,7 @@
         loadSavedParams();
         refreshData(false); 
         
-        // 核心改动：设置 3 秒（3000毫秒）自动刷新。自动触发时会联动计算所有数据
+        // 全局 3 秒自动刷新
         setInterval(() => {
             // 当用户在看 K 线图弹窗时暂停刷新，防止干扰
             if (!document.getElementById('chartModal').classList.contains('show')) {
