@@ -20,7 +20,6 @@
             --nav-bg: rgba(249, 249, 249, 0.85);
         }
 
-        /* 完美解决底部白边和滚动跳动的问题：使用 100dvh 动态高度 */
         html, body { 
             margin: 0; padding: 0; 
             width: 100vw; height: 100dvh; 
@@ -35,18 +34,16 @@
 
         .header-spacer { height: env(safe-area-inset-top); background: var(--bg-color); flex-shrink: 0; }
 
-        /* 中间内容区自适应填满剩余空间，并独立滚动 */
         .main-container { flex: 1; position: relative; overflow: hidden; }
         
         .tab-content { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             overflow-y: auto; -webkit-overflow-scrolling: touch; 
-            display: none; padding-bottom: 30px;
+            display: none; padding-bottom: 40px;
         }
         .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ====== iOS 设置风格的基础组件 ====== */
         .ios-group-title { margin: 20px 16px 8px 32px; font-size: 13px; color: #6d6d72; text-transform: uppercase; font-weight: 500; display: flex; align-items: center; }
         .ios-group { background: var(--card-bg); border-radius: 12px; margin: 0 16px 20px 16px; overflow: hidden; }
         
@@ -55,7 +52,6 @@
         .ios-row label { font-size: 16px; color: var(--text-main); font-weight: 400; }
         .ios-row input { text-align: right; font-size: 16px; border: none; outline: none; background: transparent; color: var(--blue-btn); font-weight: 500; width: 120px; }
         
-        /* 统计格子样式 */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; border-top: 0.5px solid var(--separator); }
         .grid-item { padding: 14px 16px; position: relative; display: flex; flex-direction: column; justify-content: center; }
         .grid-item:nth-child(odd)::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 0.5px; background-color: var(--separator); }
@@ -78,7 +74,6 @@
         .live-dot { width: 8px; height: 8px; background-color: var(--green-down); border-radius: 50%; margin-left: 8px; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
 
-        /* ====== 底部导航栏（高级感 SVG 图标） ====== */
         .bottom-nav { 
             background: var(--nav-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); 
             border-top: 0.5px solid rgba(0,0,0,0.15); display: flex; flex-shrink: 0;
@@ -87,10 +82,8 @@
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; padding-top: 4px; }
         .nav-item.active { color: var(--blue-btn); }
         .nav-icon { width: 24px; height: 24px; margin-bottom: 2px; fill: currentColor; }
-        /* 未选中时使用描边，选中时使用填充颜色 */
         .nav-item svg path { transition: all 0.2s; }
 
-        /* ====== 列表与搜索 ====== */
         .search-bar { background: #e3e3e8; border-radius: 10px; padding: 10px 12px; margin: 0 16px 16px 16px; display: flex; align-items: center; }
         .search-bar input { flex: 1; border: none; background: transparent; font-size: 16px; outline: none; }
         
@@ -110,7 +103,6 @@
         .s-add-btn { background: #f2f2f7; color: var(--blue-btn); border: none; padding: 6px 14px; border-radius: 12px; font-weight: 600; font-size: 13px; }
         .s-add-btn.added { background: transparent; color: var(--text-muted); pointer-events: none; }
 
-        /* ====== 新增：K线行情详情悬浮页 (iOS 侧滑面板风格) ====== */
         .detail-page {
             position: fixed; top: 0; left: 100%; width: 100vw; height: 100dvh;
             background: var(--bg-color); z-index: 200;
@@ -129,7 +121,6 @@
         .d-price { font-size: 36px; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
         .d-change { font-size: 16px; font-weight: 500; }
 
-        /* K线图区域 */
         .chart-box { background: #fff; margin-top: 10px; padding-bottom: 16px; border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); }
         .segment-control { display: flex; background: #eeeeef; border-radius: 8px; padding: 2px; margin: 16px; }
         .seg-item { flex: 1; text-align: center; padding: 6px 0; font-size: 13px; font-weight: 500; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
@@ -187,29 +178,27 @@
         </div>
 
         <div id="tab-market" class="tab-content">
-            <div class="ios-group-title">A股大盘 <div class="live-dot"></div></div>
+            <div class="ios-group-title">A股核心指数 <div class="live-dot"></div></div>
             <div class="ios-group" id="market-cn"></div>
 
-            <div class="ios-group-title">美股大盘</div>
+            <div class="ios-group-title">美股与明星科技股</div>
             <div class="ios-group" id="market-us"></div>
-        </div>
+            
+            <div style="height: 20px;"></div> </div>
     </div>
 
     <div id="detailPage" class="detail-page">
         <div class="detail-nav">
             <div class="back-btn" onclick="closeDetail()">
-                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
-                返回
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>返回
             </div>
             <div class="detail-title" id="d-title">股票详情</div>
             <div class="detail-right"></div>
         </div>
-        
         <div class="detail-header">
             <div class="d-price" id="d-price">--</div>
             <div class="d-change" id="d-change">--</div>
         </div>
-
         <div class="chart-box">
             <div class="segment-control">
                 <div class="seg-item active" onclick="switchChart('min', this)">分时</div>
@@ -219,7 +208,6 @@
             </div>
             <img id="kline-img" class="chart-img" src="" alt="加载图表中...">
         </div>
-
         <div class="action-bar">
             <button class="btn-primary" onclick="addAndGoToPersonal()">带入公式推演</button>
         </div>
@@ -243,10 +231,11 @@
     <script>
         let activeTab = 'personal';
         let watchlist = JSON.parse(localStorage.getItem('myWatchlist')) || ['sh000001', 'sh600481'];
-        const marketCN = ['sh000001', 'sz399001', 'sz399006']; 
-        const marketUS = ['usDJI', 'usIXIC', 'usINX']; 
+        
+        // 核心修改：大幅扩容指数与明星股票库，填满 Pro Max 的大屏幕
+        const marketCN = ['sh000001', 'sz399001', 'sz399006', 'sh000300', 'sh000688']; // 增加了沪深300、科创50
+        const marketUS = ['usDJI', 'usIXIC', 'usINX', 'usAAPL', 'usNVDA', 'usTSLA', 'usMSFT']; // 增加了苹果、英伟达、特斯拉、微软
 
-        // 详情页全局变量
         let currentDetailCode = '';
 
         function switchTab(tabName) {
@@ -304,7 +293,6 @@
             return { name, price, changePercent: changePercent || 0, changeValue: changeValue || 0 };
         }
 
-        // ================= K线详情页逻辑 =================
         function openDetail(code, name, price, changePercent, changeValue) {
             currentDetailCode = code;
             document.getElementById('d-title').innerText = `${name} (${code.toUpperCase()})`;
@@ -331,18 +319,13 @@
                 changeEl.innerText = `0.00 (0.00%)`;
             }
 
-            // 默认加载分时图
             document.querySelectorAll('.seg-item').forEach(el => el.classList.remove('active'));
             document.querySelector('.seg-item').classList.add('active');
             loadChart('min');
-
-            // 滑出面板
             document.getElementById('detailPage').classList.add('show');
         }
 
-        function closeDetail() {
-            document.getElementById('detailPage').classList.remove('show');
-        }
+        function closeDetail() { document.getElementById('detailPage').classList.remove('show'); }
 
         function switchChart(period, element) {
             document.querySelectorAll('.seg-item').forEach(el => el.classList.remove('active'));
@@ -351,29 +334,23 @@
         }
 
         function loadChart(period) {
-            // 调用新浪财经的 K 线静态图接口，极其稳定且自带各种指标
-            // 美股和 A 股的图片前缀略有不同
             let imgUrl = '';
-            let t = new Date().getTime(); // 防缓存
+            let t = new Date().getTime(); 
             if (currentDetailCode.startsWith('us')) {
-                // 美股 (腾讯代码 usDJI -> 新浪代码 .dji)
                 let sinaUsCode = currentDetailCode.replace('us', '.').toLowerCase();
                 imgUrl = `https://image.sinajs.cn/newchart/v5/us/${period}/${sinaUsCode}.gif?${t}`;
             } else {
-                // A股 (直接使用 sh600481)
                 imgUrl = `https://image.sinajs.cn/newchart/${period}/n/${currentDetailCode}.gif?${t}`;
             }
             document.getElementById('kline-img').src = imgUrl;
         }
 
-        // 从详情页点击“带入推演”
         function addAndGoToPersonal() {
             closeDetail();
             document.getElementById('stockCode').value = currentDetailCode;
             switchTab('personal');
         }
 
-        // ================= 原有逻辑：推演、列表、刷新 =================
         async function refreshPersonal() {
             const code = document.getElementById('stockCode').value.trim();
             const cost = parseFloat(document.getElementById('cost').value);
@@ -419,7 +396,6 @@
                     
                     const delHtml = allowDelete ? `<div class="stock-del" onclick="event.stopPropagation(); removeStock('${code}')">删除</div>` : '';
                     
-                    // 点击现在不再是跳到推演，而是打开 K线详情页
                     htmlStr += `
                         <div class="stock-item" onclick="openDetail('${code}', '${name}', '${price}', ${changePercent}, ${changeValue})">
                             <div class="stock-left"><div class="stock-name">${name}</div><div class="stock-code">${code.toUpperCase()}</div></div>
@@ -433,7 +409,6 @@
             } catch (e) {}
         }
 
-        // ================= 搜索相关逻辑 =================
         let searchTimeout = null;
         function handleSearch(keyword) {
             clearTimeout(searchTimeout);
@@ -459,7 +434,6 @@
                     const fullCode = parts[0]; const shortCode = parts[2]; const name = parts[4];       
                     const isAdded = watchlist.includes(fullCode);
                     const btnHtml = isAdded ? `<button class="s-add-btn added">已添加</button>` : `<button class="s-add-btn" onclick="event.stopPropagation(); addStock('${fullCode}')">+ 自选</button>`;
-                    // 搜索结果点击也直接打开详情页，价格先传空，详情页打开后如果有接口可再更新，或者简单处理
                     htmlStr += `<div class="s-item"><div style="flex:1" onclick="openDetail('${fullCode}', '${name}', '--', 0, 0)"><div class="stock-name">${name}</div><div class="stock-code">${shortCode}</div></div>${btnHtml}</div>`;
                 }
             });
@@ -475,18 +449,14 @@
         function refreshWatchlist() { renderStockList(watchlist, 'watchlist-container', true); }
         function refreshMarket() { renderStockList(marketCN, 'market-cn', false); renderStockList(marketUS, 'market-us', false); }
 
-        // ================= 初始化 =================
         refreshPersonal(); refreshWatchlist(); refreshMarket();
         
         document.addEventListener('click', (e) => {
             if (!document.querySelector('.search-bar').contains(e.target)) document.getElementById('searchResults').classList.remove('active');
         });
 
-        // 定时刷新当前所在标签页
         setInterval(() => {
-            // 如果详情页开着，就不刷新底层列表了，专注详情页体验
             if (document.getElementById('detailPage').classList.contains('show')) return;
-            
             if (activeTab === 'personal') refreshPersonal();
             else if (activeTab === 'watchlist') refreshWatchlist();
             else if (activeTab === 'market') refreshMarket();
