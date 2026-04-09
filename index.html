@@ -5,191 +5,249 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="持仓看板">
+    <meta name="apple-mobile-web-app-title" content="私人看板">
     <title>私人持仓推演</title>
     <style>
         :root {
-            --bg-color: #f2f2f7; /* iOS 系统标准灰色背景 */
+            --bg-color: #f2f2f7; 
             --card-bg: #ffffff;
             --text-main: #000000;
-            --text-muted: #8a8a8e;
+            --text-muted: #8e8e93;
             --red-up: #ff3b30; 
             --green-down: #34c759; 
             --blue-btn: #007aff;
-            --separator: #c6c6c8; /* iOS 分割线颜色 */
-            --nav-bg: rgba(249, 249, 249, 0.94);
+            --separator: #c6c6c8; 
+            --nav-bg: rgba(249, 249, 249, 0.85);
         }
 
-        /* 核心修复：App 外壳固定，禁止整个 body 滚动，解决跳动问题 */
+        /* 完美解决底部白边和滚动跳动的问题：使用 100dvh 动态高度 */
         html, body { 
             margin: 0; padding: 0; 
-            width: 100%; height: 100%; 
+            width: 100vw; height: 100dvh; 
             overflow: hidden; 
             background-color: var(--bg-color); 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             color: var(--text-main); 
             -webkit-tap-highlight-color: transparent;
+            display: flex;
+            flex-direction: column;
         }
 
-        .header-spacer { height: env(safe-area-inset-top); background: var(--bg-color); }
+        .header-spacer { height: env(safe-area-inset-top); background: var(--bg-color); flex-shrink: 0; }
 
-        /* 内容区独立滚动，防止影响底部导航栏 */
+        /* 中间内容区自适应填满剩余空间，并独立滚动 */
+        .main-container { flex: 1; position: relative; overflow: hidden; }
+        
         .tab-content { 
-            display: none; 
-            height: calc(100% - 60px - env(safe-area-inset-bottom) - env(safe-area-inset-top)); 
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; /* 开启 iOS 顺滑滚动 */
-            padding-bottom: 20px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            overflow-y: auto; -webkit-overflow-scrolling: touch; 
+            display: none; padding-bottom: 30px;
         }
         .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ====== iOS 设置风格的 Group (卡片) ====== */
+        /* ====== iOS 设置风格的基础组件 ====== */
         .ios-group-title { margin: 20px 16px 8px 32px; font-size: 13px; color: #6d6d72; text-transform: uppercase; font-weight: 500; display: flex; align-items: center; }
-        .ios-group { background: var(--card-bg); border-radius: 10px; margin: 0 16px 20px 16px; overflow: hidden; }
+        .ios-group { background: var(--card-bg); border-radius: 12px; margin: 0 16px 20px 16px; overflow: hidden; }
         
-        /* ====== iOS 设置风格的 Row (行) ====== */
-        .ios-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; position: relative; background: #fff; }
+        .ios-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; position: relative; background: #fff; }
         .ios-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 0; height: 0.5px; background-color: var(--separator); }
         .ios-row label { font-size: 16px; color: var(--text-main); font-weight: 400; }
-        .ios-row input { text-align: right; font-size: 16px; border: none; outline: none; background: transparent; color: var(--text-muted); width: 120px; }
-        .ios-row .value-text { font-size: 16px; color: var(--text-muted); }
+        .ios-row input { text-align: right; font-size: 16px; border: none; outline: none; background: transparent; color: var(--blue-btn); font-weight: 500; width: 120px; }
         
-        /* 统计格子样式重构 */
+        /* 统计格子样式 */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; border-top: 0.5px solid var(--separator); }
-        .grid-item { padding: 12px 16px; position: relative; display: flex; flex-direction: column; justify-content: center; }
+        .grid-item { padding: 14px 16px; position: relative; display: flex; flex-direction: column; justify-content: center; }
         .grid-item:nth-child(odd)::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 0.5px; background-color: var(--separator); }
         .grid-item:nth-child(1), .grid-item:nth-child(2) { border-bottom: 0.5px solid var(--separator); }
         .grid-item .g-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-        .grid-item .g-value { font-size: 18px; font-weight: 600; }
+        .grid-item .g-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
         .text-red { color: var(--red-up); }
         .text-green { color: var(--green-down); }
         .bg-red { background-color: var(--red-up); color: white; }
         .bg-green { background-color: var(--green-down); color: white; }
 
-        /* 推演表格 */
         table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: right; }
-        th { color: var(--text-muted); font-weight: 400; padding: 10px 16px; border-bottom: 0.5px solid var(--separator); font-size: 12px; }
+        th { color: var(--text-muted); font-weight: 400; padding: 12px 16px; border-bottom: 0.5px solid var(--separator); font-size: 12px; }
         td { padding: 12px 16px; border-bottom: 0.5px solid var(--separator); font-variant-numeric: tabular-nums; }
         tr:last-child td { border-bottom: none; }
         th:first-child, td:first-child { text-align: left; }
 
-        .rate-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 14px; background: #f2f2f7; }
+        .rate-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 14px; background: #f2f2f7; font-variant-numeric: tabular-nums;}
         .live-dot { width: 8px; height: 8px; background-color: var(--green-down); border-radius: 50%; margin-left: 8px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
 
-        /* ====== 底部导航栏绝对固定 ====== */
-        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: calc(60px + env(safe-area-inset-bottom)); background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.2); display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; }
+        /* ====== 底部导航栏（高级感 SVG 图标） ====== */
+        .bottom-nav { 
+            background: var(--nav-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); 
+            border-top: 0.5px solid rgba(0,0,0,0.15); display: flex; flex-shrink: 0;
+            padding-bottom: env(safe-area-inset-bottom); height: calc(52px + env(safe-area-inset-bottom));
+        }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; padding-top: 4px; }
         .nav-item.active { color: var(--blue-btn); }
-        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+        .nav-icon { width: 24px; height: 24px; margin-bottom: 2px; fill: currentColor; }
+        /* 未选中时使用描边，选中时使用填充颜色 */
+        .nav-item svg path { transition: all 0.2s; }
 
-        /* ====== 自选 & 行情列表样式 ====== */
-        .search-bar { background: #e3e3e8; border-radius: 10px; padding: 8px 12px; margin: 0 16px 16px 16px; display: flex; align-items: center; }
+        /* ====== 列表与搜索 ====== */
+        .search-bar { background: #e3e3e8; border-radius: 10px; padding: 10px 12px; margin: 0 16px 16px 16px; display: flex; align-items: center; }
         .search-bar input { flex: 1; border: none; background: transparent; font-size: 16px; outline: none; }
         
-        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 0.5px solid var(--separator); background: #fff; cursor: pointer; }
+        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 0.5px solid var(--separator); background: #fff; cursor: pointer; }
         .stock-item:last-child { border-bottom: none; }
         .stock-left { flex: 1; }
         .stock-name { font-size: 16px; font-weight: 500; color: var(--text-main); }
         .stock-code { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
         .stock-price { font-size: 18px; font-weight: 600; flex: 1; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; }
         .stock-badge-wrap { width: 75px; text-align: right; }
-        .stock-badge { display: inline-block; width: 100%; padding: 6px 0; border-radius: 6px; text-align: center; font-weight: 600; font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; }
+        .stock-badge { display: inline-block; width: 100%; padding: 6px 0; border-radius: 6px; text-align: center; font-weight: 600; font-size: 15px; color: #fff; font-variant-numeric: tabular-nums; }
         .stock-del { color: var(--red-up); font-size: 14px; padding: 5px; margin-left: 8px; }
 
-        /* 搜索悬浮层 */
-        .search-results { display: none; position: absolute; top: 120px; left: 16px; right: 16px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 50; max-height: 250px; overflow-y: auto; }
+        .search-results { display: none; position: absolute; top: 120px; left: 16px; right: 16px; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 50; max-height: 250px; overflow-y: auto; }
         .search-results.active { display: block; }
         .s-item { padding: 12px 16px; border-bottom: 0.5px solid var(--separator); display: flex; justify-content: space-between; align-items: center; }
         .s-add-btn { background: #f2f2f7; color: var(--blue-btn); border: none; padding: 6px 14px; border-radius: 12px; font-weight: 600; font-size: 13px; }
         .s-add-btn.added { background: transparent; color: var(--text-muted); pointer-events: none; }
+
+        /* ====== 新增：K线行情详情悬浮页 (iOS 侧滑面板风格) ====== */
+        .detail-page {
+            position: fixed; top: 0; left: 100%; width: 100vw; height: 100dvh;
+            background: var(--bg-color); z-index: 200;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; flex-direction: column;
+        }
+        .detail-page.show { transform: translateX(-100%); }
+        
+        .detail-nav { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--bg-color); margin-top: env(safe-area-inset-top); flex-shrink: 0;}
+        .back-btn { color: var(--blue-btn); font-size: 17px; display: flex; align-items: center; cursor: pointer; }
+        .back-btn svg { width: 22px; height: 22px; fill: var(--blue-btn); margin-right: -4px; margin-left: -8px;}
+        .detail-title { font-size: 17px; font-weight: 600; text-align: center; flex: 1; }
+        .detail-right { width: 60px; }
+
+        .detail-header { background: #fff; padding: 20px 16px; text-align: center; border-bottom: 0.5px solid var(--separator); }
+        .d-price { font-size: 36px; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+        .d-change { font-size: 16px; font-weight: 500; }
+
+        /* K线图区域 */
+        .chart-box { background: #fff; margin-top: 10px; padding-bottom: 16px; border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); }
+        .segment-control { display: flex; background: #eeeeef; border-radius: 8px; padding: 2px; margin: 16px; }
+        .seg-item { flex: 1; text-align: center; padding: 6px 0; font-size: 13px; font-weight: 500; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .seg-item.active { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .chart-img { width: 100%; height: auto; min-height: 200px; display: block; }
+
+        .action-bar { padding: 20px 16px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); margin-top: auto; background: var(--bg-color); }
+        .btn-primary { width: 100%; background: var(--blue-btn); color: #fff; font-size: 17px; font-weight: 600; border: none; border-radius: 14px; padding: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
+        .btn-primary:active { opacity: 0.8; }
+
     </style>
 </head>
 <body>
     <div class="header-spacer"></div>
 
-    <div id="tab-personal" class="tab-content active">
-        <div class="ios-group-title">配置参数</div>
-        <div class="ios-group">
-            <div class="ios-row">
-                <label>股票代码</label>
-                <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
+    <div class="main-container">
+        <div id="tab-personal" class="tab-content active">
+            <div class="ios-group-title">配置参数</div>
+            <div class="ios-group">
+                <div class="ios-row"><label>股票代码</label><input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481"></div>
+                <div class="ios-row"><label>初始总成本</label><input type="number" id="cost" value="385000"></div>
+                <div class="ios-row"><label>持仓股数</label><input type="number" id="shares" value="26200"></div>
+                <div class="ios-row"><label>预期日涨幅(%)</label><input type="number" id="dailyGrowth" value="10" step="0.1"></div>
             </div>
-            <div class="ios-row">
-                <label>初始总成本</label>
-                <input type="number" id="cost" value="385000">
+
+            <div class="ios-group-title">实时看板 <div class="live-dot"></div><span id="profitRate" class="rate-badge" style="margin-left: auto; margin-right: 16px;">--</span></div>
+            <div class="ios-group">
+                <div class="grid-2">
+                    <div class="grid-item"><div class="g-label">最新股价</div><div class="g-value" id="currentPrice">--</div></div>
+                    <div class="grid-item"><div class="g-label">当前市值</div><div class="g-value" id="marketValue">--</div></div>
+                    <div class="grid-item"><div class="g-label">回本股价</div><div class="g-value" id="breakevenPrice">--</div></div>
+                    <div class="grid-item"><div class="g-label">浮动盈亏</div><div class="g-value" id="profit">--</div></div>
+                </div>
             </div>
-            <div class="ios-row">
-                <label>持仓股数</label>
-                <input type="number" id="shares" value="26200">
-            </div>
-            <div class="ios-row">
-                <label>预期日涨幅(%)</label>
-                <input type="number" id="dailyGrowth" value="10" step="0.1">
+
+            <div class="ios-group-title">T+10 预期推演</div>
+            <div class="ios-group">
+                <table>
+                    <thead><tr><th>交易日</th><th>预期股价</th><th>预期市值</th><th>单日浮动</th></tr></thead>
+                    <tbody id="projectionTable"></tbody>
+                </table>
             </div>
         </div>
 
-        <div class="ios-group-title">
-            实时看板 <div class="live-dot"></div>
-            <span id="profitRate" class="rate-badge" style="margin-left: auto; margin-right: 16px;">--</span>
-        </div>
-        <div class="ios-group">
-            <div class="grid-2">
-                <div class="grid-item"><div class="g-label">最新股价</div><div class="g-value" id="currentPrice">--</div></div>
-                <div class="grid-item"><div class="g-label">当前市值</div><div class="g-value" id="marketValue">--</div></div>
-                <div class="grid-item"><div class="g-label">回本股价</div><div class="g-value" id="breakevenPrice">--</div></div>
-                <div class="grid-item"><div class="g-label">浮动盈亏</div><div class="g-value" id="profit">--</div></div>
+        <div id="tab-watchlist" class="tab-content">
+            <div class="ios-group-title">搜索添加</div>
+            <div class="search-bar">
+                <span style="margin-right: 8px;">🔍</span>
+                <input type="text" id="searchInput" placeholder="输入股票代码、汉字或拼音" oninput="handleSearch(this.value)" autocomplete="off">
             </div>
+            <div id="searchResults" class="search-results"></div>
+
+            <div class="ios-group-title">我的自选 <div class="live-dot"></div></div>
+            <div class="ios-group" id="watchlist-container"></div>
         </div>
 
-        <div class="ios-group-title">T+10 预期推演</div>
-        <div class="ios-group">
-            <table>
-                <thead><tr><th>交易日</th><th>预期股价</th><th>预期市值</th><th>单日浮动</th></tr></thead>
-                <tbody id="projectionTable"></tbody>
-            </table>
+        <div id="tab-market" class="tab-content">
+            <div class="ios-group-title">A股大盘 <div class="live-dot"></div></div>
+            <div class="ios-group" id="market-cn"></div>
+
+            <div class="ios-group-title">美股大盘</div>
+            <div class="ios-group" id="market-us"></div>
         </div>
     </div>
 
-    <div id="tab-watchlist" class="tab-content">
-        <div class="ios-group-title">搜索添加</div>
-        <div class="search-bar">
-            <span style="margin-right: 8px;">🔍</span>
-            <input type="text" id="searchInput" placeholder="搜索股票代码、汉字或拼音" oninput="handleSearch(this.value)" autocomplete="off">
+    <div id="detailPage" class="detail-page">
+        <div class="detail-nav">
+            <div class="back-btn" onclick="closeDetail()">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                返回
+            </div>
+            <div class="detail-title" id="d-title">股票详情</div>
+            <div class="detail-right"></div>
         </div>
         
-        <div id="searchResults" class="search-results"></div>
+        <div class="detail-header">
+            <div class="d-price" id="d-price">--</div>
+            <div class="d-change" id="d-change">--</div>
+        </div>
 
-        <div class="ios-group-title">我的自选 <div class="live-dot"></div></div>
-        <div class="ios-group" id="watchlist-container">
+        <div class="chart-box">
+            <div class="segment-control">
+                <div class="seg-item active" onclick="switchChart('min', this)">分时</div>
+                <div class="seg-item" onclick="switchChart('daily', this)">日K</div>
+                <div class="seg-item" onclick="switchChart('weekly', this)">周K</div>
+                <div class="seg-item" onclick="switchChart('monthly', this)">月K</div>
             </div>
-    </div>
+            <img id="kline-img" class="chart-img" src="" alt="加载图表中...">
+        </div>
 
-    <div id="tab-market" class="tab-content">
-        <div class="ios-group-title">A股大盘 <div class="live-dot"></div></div>
-        <div class="ios-group" id="market-cn">
-            </div>
-
-        <div class="ios-group-title">美股大盘</div>
-        <div class="ios-group" id="market-us">
-            </div>
+        <div class="action-bar">
+            <button class="btn-primary" onclick="addAndGoToPersonal()">带入公式推演</button>
+        </div>
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item active" id="nav-personal" onclick="switchTab('personal')"><div class="nav-icon">👤</div><div>推演</div></div>
-        <div class="nav-item" id="nav-watchlist" onclick="switchTab('watchlist')"><div class="nav-icon">⭐</div><div>自选</div></div>
-        <div class="nav-item" id="nav-market" onclick="switchTab('market')"><div class="nav-icon">🌐</div><div>行情</div></div>
+        <div class="nav-item active" id="nav-personal" onclick="switchTab('personal')">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 16H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V9h10v2z"/></svg>
+            <div>推演</div>
+        </div>
+        <div class="nav-item" id="nav-watchlist" onclick="switchTab('watchlist')">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <div>自选</div>
+        </div>
+        <div class="nav-item" id="nav-market" onclick="switchTab('market')">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+            <div>行情</div>
+        </div>
     </div>
 
     <script>
         let activeTab = 'personal';
         let watchlist = JSON.parse(localStorage.getItem('myWatchlist')) || ['sh000001', 'sh600481'];
-        
-        // 预设的大盘指数代码
-        const marketCN = ['sh000001', 'sz399001', 'sz399006']; // 上证, 深证, 创业板
-        const marketUS = ['usDJI', 'usIXIC', 'usINX']; // 道琼斯, 纳斯达克, 标普500
+        const marketCN = ['sh000001', 'sz399001', 'sz399006']; 
+        const marketUS = ['usDJI', 'usIXIC', 'usINX']; 
+
+        // 详情页全局变量
+        let currentDetailCode = '';
 
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -207,21 +265,14 @@
 
         function formatNum(num) { return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
-        // ================= 核心修复：GBK 编码安全拉取数据 =================
         function fetchSafeData(codesArray) {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                // 强制指定为 GBK 编码，彻底解决乱码！
                 script.charset = 'gbk';
                 script.src = `https://qt.gtimg.cn/q=${codesArray.join(',')}&t=${new Date().getTime()}`;
-                
                 script.onload = () => {
                     const results = {};
-                    codesArray.forEach(code => {
-                        if (window['v_' + code]) {
-                            results[code] = window['v_' + code];
-                        }
-                    });
+                    codesArray.forEach(code => { if (window['v_' + code]) results[code] = window['v_' + code]; });
                     document.head.removeChild(script);
                     resolve(results);
                 };
@@ -230,86 +281,99 @@
             });
         }
 
-        // 解析腾讯不同类型股票的数据结构
         function parseStockString(code, dataStr) {
             const parts = dataStr.split('~');
             let name = parts[1];
-            let price, changePercent;
+            let price, changePercent, changeValue;
 
             if (code.startsWith('us')) {
-                // 美股格式略有不同
                 price = parseFloat(parts[3]).toFixed(2);
                 let prevClose = parseFloat(parts[4]);
-                changePercent = ((parseFloat(price) - prevClose) / prevClose * 100);
+                changeValue = (parseFloat(price) - prevClose);
+                changePercent = (changeValue / prevClose * 100);
             } else {
-                // A股格式
                 price = parseFloat(parts[3]).toFixed(2);
                 changePercent = parseFloat(parts[32]);
-                if (isNaN(changePercent)) { // 部分老指数的兼容处理
+                changeValue = parseFloat(parts[31]); 
+                if (isNaN(changePercent)) { 
                     let prevClose = parseFloat(parts[4]);
-                    changePercent = ((parseFloat(price) - prevClose) / prevClose * 100);
+                    changeValue = (parseFloat(price) - prevClose);
+                    changePercent = (changeValue / prevClose * 100);
                 }
             }
-            return { name, price, changePercent: changePercent || 0 };
+            return { name, price, changePercent: changePercent || 0, changeValue: changeValue || 0 };
         }
 
-        // ================= 搜索联想模块 =================
-        let searchTimeout = null;
-        function handleSearch(keyword) {
-            clearTimeout(searchTimeout);
-            const resultBox = document.getElementById('searchResults');
-            if (!keyword.trim()) { resultBox.classList.remove('active'); return; }
-            searchTimeout = setTimeout(() => fetchSuggestions(keyword.trim()), 300);
+        // ================= K线详情页逻辑 =================
+        function openDetail(code, name, price, changePercent, changeValue) {
+            currentDetailCode = code;
+            document.getElementById('d-title').innerText = `${name} (${code.toUpperCase()})`;
+            
+            const priceEl = document.getElementById('d-price');
+            const changeEl = document.getElementById('d-change');
+            
+            priceEl.innerText = price;
+            
+            let displayPercent = changePercent.toFixed(2) + '%';
+            let displayValue = changeValue.toFixed(2);
+            
+            if (changePercent > 0) {
+                priceEl.className = 'd-price text-red';
+                changeEl.className = 'd-change text-red';
+                changeEl.innerText = `+${displayValue} (+${displayPercent})`;
+            } else if (changePercent < 0) {
+                priceEl.className = 'd-price text-green';
+                changeEl.className = 'd-change text-green';
+                changeEl.innerText = `${displayValue} (${displayPercent})`;
+            } else {
+                priceEl.className = 'd-price';
+                changeEl.className = 'd-change';
+                changeEl.innerText = `0.00 (0.00%)`;
+            }
+
+            // 默认加载分时图
+            document.querySelectorAll('.seg-item').forEach(el => el.classList.remove('active'));
+            document.querySelector('.seg-item').classList.add('active');
+            loadChart('min');
+
+            // 滑出面板
+            document.getElementById('detailPage').classList.add('show');
         }
 
-        function fetchSuggestions(keyword) {
-            const script = document.createElement('script');
-            script.charset = 'gbk';
-            script.src = `https://suggest3.sinajs.cn/suggest/type=11,12,13,14,15,41&key=${encodeURIComponent(keyword)}&name=suggestdata`;
-            window.suggestdata = ''; 
-            script.onload = () => { renderSearchResults(window.suggestdata); document.head.removeChild(script); };
-            document.head.appendChild(script);
+        function closeDetail() {
+            document.getElementById('detailPage').classList.remove('show');
         }
 
-        function renderSearchResults(dataStr) {
-            const resultBox = document.getElementById('searchResults');
-            if (!dataStr) { resultBox.classList.remove('active'); return; }
-            const items = dataStr.split(';').filter(i => i.trim() !== '');
-            let htmlStr = '';
-            items.slice(0, 6).forEach(item => {
-                const parts = item.split(',');
-                if (parts.length >= 5) {
-                    const fullCode = parts[0]; const shortCode = parts[2]; const name = parts[4];       
-                    const isAdded = watchlist.includes(fullCode);
-                    const btnHtml = isAdded ? `<button class="s-add-btn added">已添加</button>` : `<button class="s-add-btn" onclick="event.stopPropagation(); addStock('${fullCode}')">+ 自选</button>`;
-                    htmlStr += `<div class="s-item"><div style="flex:1" onclick="jumpToPersonal('${fullCode}')"><div class="stock-name">${name}</div><div class="stock-code">${shortCode}</div></div>${btnHtml}</div>`;
-                }
-            });
-            resultBox.innerHTML = htmlStr;
-            resultBox.classList.add('active');
+        function switchChart(period, element) {
+            document.querySelectorAll('.seg-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            loadChart(period);
         }
 
-        function addStock(code) {
-            if (!watchlist.includes(code)) { watchlist.push(code); localStorage.setItem('myWatchlist', JSON.stringify(watchlist)); }
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchResults').classList.remove('active');
-            refreshWatchlist();
+        function loadChart(period) {
+            // 调用新浪财经的 K 线静态图接口，极其稳定且自带各种指标
+            // 美股和 A 股的图片前缀略有不同
+            let imgUrl = '';
+            let t = new Date().getTime(); // 防缓存
+            if (currentDetailCode.startsWith('us')) {
+                // 美股 (腾讯代码 usDJI -> 新浪代码 .dji)
+                let sinaUsCode = currentDetailCode.replace('us', '.').toLowerCase();
+                imgUrl = `https://image.sinajs.cn/newchart/v5/us/${period}/${sinaUsCode}.gif?${t}`;
+            } else {
+                // A股 (直接使用 sh600481)
+                imgUrl = `https://image.sinajs.cn/newchart/${period}/n/${currentDetailCode}.gif?${t}`;
+            }
+            document.getElementById('kline-img').src = imgUrl;
         }
 
-        function removeStock(code) {
-            watchlist = watchlist.filter(c => c !== code);
-            localStorage.setItem('myWatchlist', JSON.stringify(watchlist));
-            refreshWatchlist();
+        // 从详情页点击“带入推演”
+        function addAndGoToPersonal() {
+            closeDetail();
+            document.getElementById('stockCode').value = currentDetailCode;
+            switchTab('personal');
         }
 
-        // ================= 各页面刷新逻辑 =================
-        function jumpToPersonal(code) { 
-            document.getElementById('searchResults').classList.remove('active');
-            document.getElementById('searchInput').value = '';
-            document.getElementById('stockCode').value = code; 
-            switchTab('personal'); 
-        }
-
+        // ================= 原有逻辑：推演、列表、刷新 =================
         async function refreshPersonal() {
             const code = document.getElementById('stockCode').value.trim();
             const cost = parseFloat(document.getElementById('cost').value);
@@ -348,15 +412,16 @@
                 let htmlStr = '';
                 codes.forEach(code => {
                     if (!dataObj[code]) return;
-                    const { name, price, changePercent } = parseStockString(code, dataObj[code]);
+                    const { name, price, changePercent, changeValue } = parseStockString(code, dataObj[code]);
                     
                     let colorClass = 'bg-gray'; let displayPercent = changePercent.toFixed(2) + '%';
                     if (changePercent > 0) { colorClass = 'bg-red'; displayPercent = '+' + displayPercent; } else if (changePercent < 0) { colorClass = 'bg-green'; }
                     
                     const delHtml = allowDelete ? `<div class="stock-del" onclick="event.stopPropagation(); removeStock('${code}')">删除</div>` : '';
                     
+                    // 点击现在不再是跳到推演，而是打开 K线详情页
                     htmlStr += `
-                        <div class="stock-item" onclick="jumpToPersonal('${code}')">
+                        <div class="stock-item" onclick="openDetail('${code}', '${name}', '${price}', ${changePercent}, ${changeValue})">
                             <div class="stock-left"><div class="stock-name">${name}</div><div class="stock-code">${code.toUpperCase()}</div></div>
                             <div class="stock-price ${changePercent > 0 ? 'text-red' : (changePercent < 0 ? 'text-green' : '')}">${price}</div>
                             <div class="stock-badge-wrap"><div class="stock-badge ${colorClass}">${displayPercent}</div></div>
@@ -368,10 +433,49 @@
             } catch (e) {}
         }
 
+        // ================= 搜索相关逻辑 =================
+        let searchTimeout = null;
+        function handleSearch(keyword) {
+            clearTimeout(searchTimeout);
+            const resultBox = document.getElementById('searchResults');
+            if (!keyword.trim()) { resultBox.classList.remove('active'); return; }
+            searchTimeout = setTimeout(() => fetchSuggestions(keyword.trim()), 300);
+        }
+        function fetchSuggestions(keyword) {
+            const script = document.createElement('script'); script.charset = 'gbk';
+            script.src = `https://suggest3.sinajs.cn/suggest/type=11,12,13,14,15,41&key=${encodeURIComponent(keyword)}&name=suggestdata`;
+            window.suggestdata = ''; 
+            script.onload = () => { renderSearchResults(window.suggestdata); document.head.removeChild(script); };
+            document.head.appendChild(script);
+        }
+        function renderSearchResults(dataStr) {
+            const resultBox = document.getElementById('searchResults');
+            if (!dataStr) { resultBox.classList.remove('active'); return; }
+            const items = dataStr.split(';').filter(i => i.trim() !== '');
+            let htmlStr = '';
+            items.slice(0, 6).forEach(item => {
+                const parts = item.split(',');
+                if (parts.length >= 5) {
+                    const fullCode = parts[0]; const shortCode = parts[2]; const name = parts[4];       
+                    const isAdded = watchlist.includes(fullCode);
+                    const btnHtml = isAdded ? `<button class="s-add-btn added">已添加</button>` : `<button class="s-add-btn" onclick="event.stopPropagation(); addStock('${fullCode}')">+ 自选</button>`;
+                    // 搜索结果点击也直接打开详情页，价格先传空，详情页打开后如果有接口可再更新，或者简单处理
+                    htmlStr += `<div class="s-item"><div style="flex:1" onclick="openDetail('${fullCode}', '${name}', '--', 0, 0)"><div class="stock-name">${name}</div><div class="stock-code">${shortCode}</div></div>${btnHtml}</div>`;
+                }
+            });
+            resultBox.innerHTML = htmlStr;
+            resultBox.classList.add('active');
+        }
+        function addStock(code) {
+            if (!watchlist.includes(code)) { watchlist.push(code); localStorage.setItem('myWatchlist', JSON.stringify(watchlist)); }
+            document.getElementById('searchInput').value = ''; document.getElementById('searchResults').classList.remove('active'); refreshWatchlist();
+        }
+        function removeStock(code) { watchlist = watchlist.filter(c => c !== code); localStorage.setItem('myWatchlist', JSON.stringify(watchlist)); refreshWatchlist(); }
+
         function refreshWatchlist() { renderStockList(watchlist, 'watchlist-container', true); }
         function refreshMarket() { renderStockList(marketCN, 'market-cn', false); renderStockList(marketUS, 'market-us', false); }
 
-        // ================= 初始化与定时器 =================
+        // ================= 初始化 =================
         refreshPersonal(); refreshWatchlist(); refreshMarket();
         
         document.addEventListener('click', (e) => {
@@ -380,6 +484,9 @@
 
         // 定时刷新当前所在标签页
         setInterval(() => {
+            // 如果详情页开着，就不刷新底层列表了，专注详情页体验
+            if (document.getElementById('detailPage').classList.contains('show')) return;
+            
             if (activeTab === 'personal') refreshPersonal();
             else if (activeTab === 'watchlist') refreshWatchlist();
             else if (activeTab === 'market') refreshMarket();
