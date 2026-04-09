@@ -9,158 +9,143 @@
     <title>私人持仓推演</title>
     <style>
         :root {
-            --bg-color: #f2f2f7;
+            --bg-color: #f2f2f7; /* iOS 系统标准灰色背景 */
             --card-bg: #ffffff;
-            --text-main: #1c1c1e;
-            --text-muted: #8e8e93;
+            --text-main: #000000;
+            --text-muted: #8a8a8e;
             --red-up: #ff3b30; 
             --green-down: #34c759; 
             --blue-btn: #007aff;
-            --nav-bg: rgba(255, 255, 255, 0.85);
+            --separator: #c6c6c8; /* iOS 分割线颜色 */
+            --nav-bg: rgba(249, 249, 249, 0.94);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
+        /* 核心修复：App 外壳固定，禁止整个 body 滚动，解决跳动问题 */
+        html, body { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%; 
+            overflow: hidden; 
             background-color: var(--bg-color); 
-            margin: 0; 
-            padding: 20px 16px calc(env(safe-area-inset-bottom) + 80px) 16px; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             color: var(--text-main); 
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .header-spacer { height: env(safe-area-inset-top); margin-bottom: 5px; }
+        .header-spacer { height: env(safe-area-inset-top); background: var(--bg-color); }
 
-        .card { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); }
-        h2 { margin: 0 0 16px 0; font-size: 18px; font-weight: 600; letter-spacing: -0.5px; display: flex; align-items: center; }
+        /* 内容区独立滚动，防止影响底部导航栏 */
+        .tab-content { 
+            display: none; 
+            height: calc(100% - 60px - env(safe-area-inset-bottom) - env(safe-area-inset-top)); 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; /* 开启 iOS 顺滑滚动 */
+            padding-bottom: 20px;
+        }
+        .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .input-group { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #e5e5ea; }
-        .input-group:last-child { border-bottom: none; padding-bottom: 0; }
-        .input-group label { font-size: 15px; color: var(--text-main); font-weight: 500;}
-        .input-group input { width: 140px; padding: 8px 12px; background: #f2f2f7; border: none; border-radius: 8px; text-align: right; font-size: 16px; font-weight: 600; outline: none; }
-        .input-group input:focus { background: #e5e5ea; }
-
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-box { background: rgba(242, 242, 247, 0.6); padding: 16px; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; }
-        .stat-box .label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; }
-        .stat-box .value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        /* ====== iOS 设置风格的 Group (卡片) ====== */
+        .ios-group-title { margin: 20px 16px 8px 32px; font-size: 13px; color: #6d6d72; text-transform: uppercase; font-weight: 500; display: flex; align-items: center; }
+        .ios-group { background: var(--card-bg); border-radius: 10px; margin: 0 16px 20px 16px; overflow: hidden; }
+        
+        /* ====== iOS 设置风格的 Row (行) ====== */
+        .ios-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; position: relative; background: #fff; }
+        .ios-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 0; height: 0.5px; background-color: var(--separator); }
+        .ios-row label { font-size: 16px; color: var(--text-main); font-weight: 400; }
+        .ios-row input { text-align: right; font-size: 16px; border: none; outline: none; background: transparent; color: var(--text-muted); width: 120px; }
+        .ios-row .value-text { font-size: 16px; color: var(--text-muted); }
+        
+        /* 统计格子样式重构 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; border-top: 0.5px solid var(--separator); }
+        .grid-item { padding: 12px 16px; position: relative; display: flex; flex-direction: column; justify-content: center; }
+        .grid-item:nth-child(odd)::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 0.5px; background-color: var(--separator); }
+        .grid-item:nth-child(1), .grid-item:nth-child(2) { border-bottom: 0.5px solid var(--separator); }
+        .grid-item .g-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .grid-item .g-value { font-size: 18px; font-weight: 600; }
 
         .text-red { color: var(--red-up); }
         .text-green { color: var(--green-down); }
         .bg-red { background-color: var(--red-up); color: white; }
         .bg-green { background-color: var(--green-down); color: white; }
-        .bg-gray { background-color: var(--text-muted); color: white; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; text-align: right; }
-        th { color: var(--text-muted); font-weight: 500; padding-bottom: 12px; border-bottom: 0.5px solid #e5e5ea; font-size: 12px;}
-        td { padding: 12px 0; border-bottom: 0.5px solid #f2f2f7; font-variant-numeric: tabular-nums; }
+        /* 推演表格 */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: right; }
+        th { color: var(--text-muted); font-weight: 400; padding: 10px 16px; border-bottom: 0.5px solid var(--separator); font-size: 12px; }
+        td { padding: 12px 16px; border-bottom: 0.5px solid var(--separator); font-variant-numeric: tabular-nums; }
         tr:last-child td { border-bottom: none; }
         th:first-child, td:first-child { text-align: left; }
 
-        .rate-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px; background: #f2f2f7; }
-
+        .rate-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 14px; background: #f2f2f7; }
         .live-dot { width: 8px; height: 8px; background-color: var(--green-down); border-radius: 50%; margin-left: 8px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
 
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: calc(60px + env(safe-area-inset-bottom)); background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; }
+        /* ====== 底部导航栏绝对固定 ====== */
+        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: calc(60px + env(safe-area-inset-bottom)); background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.2); display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; }
         .nav-item.active { color: var(--blue-btn); }
         .nav-icon { font-size: 24px; margin-bottom: 2px; }
 
-        /* ====== 搜索栏与联想池样式 ====== */
-        .search-container { position: relative; margin-bottom: 16px; }
-        .search-bar { display: flex; background: #e5e5ea; border-radius: 10px; padding: 10px 14px; align-items: center; }
+        /* ====== 自选 & 行情列表样式 ====== */
+        .search-bar { background: #e3e3e8; border-radius: 10px; padding: 8px 12px; margin: 0 16px 16px 16px; display: flex; align-items: center; }
         .search-bar input { flex: 1; border: none; background: transparent; font-size: 16px; outline: none; }
         
-        .search-results { 
-            display: none; position: absolute; top: 50px; left: 0; width: 100%; 
-            background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); 
-            z-index: 50; max-height: 280px; overflow-y: auto; border: 1px solid #f2f2f7;
-        }
+        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 0.5px solid var(--separator); background: #fff; cursor: pointer; }
+        .stock-item:last-child { border-bottom: none; }
+        .stock-left { flex: 1; }
+        .stock-name { font-size: 16px; font-weight: 500; color: var(--text-main); }
+        .stock-code { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .stock-price { font-size: 18px; font-weight: 600; flex: 1; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; }
+        .stock-badge-wrap { width: 75px; text-align: right; }
+        .stock-badge { display: inline-block; width: 100%; padding: 6px 0; border-radius: 6px; text-align: center; font-weight: 600; font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; }
+        .stock-del { color: var(--red-up); font-size: 14px; padding: 5px; margin-left: 8px; }
+
+        /* 搜索悬浮层 */
+        .search-results { display: none; position: absolute; top: 120px; left: 16px; right: 16px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 50; max-height: 250px; overflow-y: auto; }
         .search-results.active { display: block; }
-        .search-item { padding: 14px 16px; border-bottom: 0.5px solid #f2f2f7; display: flex; justify-content: space-between; align-items: center; }
-        .search-item:last-child { border-bottom: none; }
-        
-        .s-info { flex: 1; cursor: pointer; }
-        .s-info:active { opacity: 0.6; }
-        .s-name { font-size: 16px; font-weight: 600; color: var(--text-main); }
-        .s-code { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 2px;}
-        
-        /* 新增：自选按钮样式 */
-        .s-add-btn {
-            background: #f2f2f7;
-            color: var(--blue-btn);
-            border: none;
-            padding: 6px 14px;
-            border-radius: 14px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .s-add-btn:active { opacity: 0.7; }
-        .s-add-btn.added {
-            background: transparent;
-            color: var(--text-muted);
-            pointer-events: none; /* 已添加后禁止点击 */
-        }
-
-        /* 自选股列表 */
-        .wl-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 0.5px solid #e5e5ea; cursor: pointer; }
-        .wl-item:last-child { border-bottom: none; }
-        .wl-left { flex: 1; }
-        .wl-name { font-size: 16px; font-weight: 600; color: var(--text-main); }
-        .wl-code { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
-        .wl-mid { flex: 1; text-align: right; font-size: 20px; font-weight: 700; padding-right: 15px; font-variant-numeric: tabular-nums;}
-        .wl-right { width: 80px; text-align: right; }
-        .wl-badge { display: inline-block; width: 100%; padding: 8px 0; border-radius: 6px; text-align: center; font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
-        .wl-delete { color: var(--text-muted); font-size: 20px; padding: 10px; margin-left: 5px; }
-
+        .s-item { padding: 12px 16px; border-bottom: 0.5px solid var(--separator); display: flex; justify-content: space-between; align-items: center; }
+        .s-add-btn { background: #f2f2f7; color: var(--blue-btn); border: none; padding: 6px 14px; border-radius: 12px; font-weight: 600; font-size: 13px; }
+        .s-add-btn.added { background: transparent; color: var(--text-muted); pointer-events: none; }
     </style>
 </head>
 <body>
     <div class="header-spacer"></div>
 
     <div id="tab-personal" class="tab-content active">
-        <div class="card">
-            <h2>⚙️ 参数设置</h2>
-            <div class="input-group">
+        <div class="ios-group-title">配置参数</div>
+        <div class="ios-group">
+            <div class="ios-row">
                 <label>股票代码</label>
                 <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
             </div>
-            <div class="input-group">
+            <div class="ios-row">
                 <label>初始总成本</label>
                 <input type="number" id="cost" value="385000">
             </div>
-            <div class="input-group">
+            <div class="ios-row">
                 <label>持仓股数</label>
                 <input type="number" id="shares" value="26200">
             </div>
-            <div class="input-group">
+            <div class="ios-row">
                 <label>预期日涨幅(%)</label>
                 <input type="number" id="dailyGrowth" value="10" step="0.1">
             </div>
         </div>
 
-        <div class="card" style="margin-top: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h2 style="margin: 0;">📊 实时看板 <div class="live-dot"></div></h2>
-                <div id="profitRate" class="rate-badge">--</div>
-            </div>
+        <div class="ios-group-title">
+            实时看板 <div class="live-dot"></div>
+            <span id="profitRate" class="rate-badge" style="margin-left: auto; margin-right: 16px;">--</span>
+        </div>
+        <div class="ios-group">
             <div class="grid-2">
-                <div class="stat-box"><div class="label">最新股价</div><div class="value" id="currentPrice">--</div></div>
-                <div class="stat-box"><div class="label">当前市值</div><div class="value" id="marketValue">--</div></div>
-                <div class="stat-box"><div class="label">回本股价</div><div class="value" id="breakevenPrice">--</div></div>
-                <div class="stat-box"><div class="label">浮动盈亏</div><div class="value" id="profit">--</div></div>
+                <div class="grid-item"><div class="g-label">最新股价</div><div class="g-value" id="currentPrice">--</div></div>
+                <div class="grid-item"><div class="g-label">当前市值</div><div class="g-value" id="marketValue">--</div></div>
+                <div class="grid-item"><div class="g-label">回本股价</div><div class="g-value" id="breakevenPrice">--</div></div>
+                <div class="grid-item"><div class="g-label">浮动盈亏</div><div class="g-value" id="profit">--</div></div>
             </div>
         </div>
 
-        <div class="card">
-            <h2>📈 T+10 预期推演</h2>
+        <div class="ios-group-title">T+10 预期推演</div>
+        <div class="ios-group">
             <table>
                 <thead><tr><th>交易日</th><th>预期股价</th><th>预期市值</th><th>单日浮动</th></tr></thead>
                 <tbody id="projectionTable"></tbody>
@@ -169,32 +154,42 @@
     </div>
 
     <div id="tab-watchlist" class="tab-content">
-        <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
-            <h2 style="padding: 10px 0;">⭐ 我的自选 <div class="live-dot" style="margin-left:auto;"></div></h2>
-            
-            <div class="search-container">
-                <div class="search-bar">
-                    <span style="margin-right: 8px; font-size: 14px;">🔍</span>
-                    <input type="text" id="searchInput" placeholder="搜索股票代码、汉字或拼音缩写" oninput="handleSearch(this.value)" autocomplete="off">
-                </div>
-                <div id="searchResults" class="search-results">
-                    </div>
+        <div class="ios-group-title">搜索添加</div>
+        <div class="search-bar">
+            <span style="margin-right: 8px;">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索股票代码、汉字或拼音" oninput="handleSearch(this.value)" autocomplete="off">
+        </div>
+        
+        <div id="searchResults" class="search-results"></div>
+
+        <div class="ios-group-title">我的自选 <div class="live-dot"></div></div>
+        <div class="ios-group" id="watchlist-container">
+            </div>
+    </div>
+
+    <div id="tab-market" class="tab-content">
+        <div class="ios-group-title">A股大盘 <div class="live-dot"></div></div>
+        <div class="ios-group" id="market-cn">
             </div>
 
-            <div class="card" style="padding: 0 16px;">
-                <div id="watchlist-container"></div>
+        <div class="ios-group-title">美股大盘</div>
+        <div class="ios-group" id="market-us">
             </div>
-        </div>
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item active" id="nav-personal" onclick="switchTab('personal')"><div class="nav-icon">👤</div><div>个人</div></div>
-        <div class="nav-item" id="nav-watchlist" onclick="switchTab('watchlist')"><div class="nav-icon">📈</div><div>自选股票</div></div>
+        <div class="nav-item active" id="nav-personal" onclick="switchTab('personal')"><div class="nav-icon">👤</div><div>推演</div></div>
+        <div class="nav-item" id="nav-watchlist" onclick="switchTab('watchlist')"><div class="nav-icon">⭐</div><div>自选</div></div>
+        <div class="nav-item" id="nav-market" onclick="switchTab('market')"><div class="nav-icon">🌐</div><div>行情</div></div>
     </div>
 
     <script>
         let activeTab = 'personal';
         let watchlist = JSON.parse(localStorage.getItem('myWatchlist')) || ['sh000001', 'sh600481'];
+        
+        // 预设的大盘指数代码
+        const marketCN = ['sh000001', 'sz399001', 'sz399006']; // 上证, 深证, 创业板
+        const marketUS = ['usDJI', 'usIXIC', 'usINX']; // 道琼斯, 纳斯达克, 标普500
 
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -203,118 +198,111 @@
             document.getElementById(`nav-${tabName}`).classList.add('active');
             activeTab = tabName;
             
-            if(tabName === 'personal') {
-                document.getElementById('searchResults').classList.remove('active');
-                refreshPersonal();
-            }
+            document.getElementById('searchResults').classList.remove('active');
+            
+            if(tabName === 'personal') refreshPersonal();
             if(tabName === 'watchlist') refreshWatchlist();
+            if(tabName === 'market') refreshMarket();
         }
 
         function formatNum(num) { return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
+        // ================= 核心修复：GBK 编码安全拉取数据 =================
+        function fetchSafeData(codesArray) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                // 强制指定为 GBK 编码，彻底解决乱码！
+                script.charset = 'gbk';
+                script.src = `https://qt.gtimg.cn/q=${codesArray.join(',')}&t=${new Date().getTime()}`;
+                
+                script.onload = () => {
+                    const results = {};
+                    codesArray.forEach(code => {
+                        if (window['v_' + code]) {
+                            results[code] = window['v_' + code];
+                        }
+                    });
+                    document.head.removeChild(script);
+                    resolve(results);
+                };
+                script.onerror = () => reject();
+                document.head.appendChild(script);
+            });
+        }
+
+        // 解析腾讯不同类型股票的数据结构
+        function parseStockString(code, dataStr) {
+            const parts = dataStr.split('~');
+            let name = parts[1];
+            let price, changePercent;
+
+            if (code.startsWith('us')) {
+                // 美股格式略有不同
+                price = parseFloat(parts[3]).toFixed(2);
+                let prevClose = parseFloat(parts[4]);
+                changePercent = ((parseFloat(price) - prevClose) / prevClose * 100);
+            } else {
+                // A股格式
+                price = parseFloat(parts[3]).toFixed(2);
+                changePercent = parseFloat(parts[32]);
+                if (isNaN(changePercent)) { // 部分老指数的兼容处理
+                    let prevClose = parseFloat(parts[4]);
+                    changePercent = ((parseFloat(price) - prevClose) / prevClose * 100);
+                }
+            }
+            return { name, price, changePercent: changePercent || 0 };
+        }
+
         // ================= 搜索联想模块 =================
         let searchTimeout = null;
-
         function handleSearch(keyword) {
             clearTimeout(searchTimeout);
             const resultBox = document.getElementById('searchResults');
-            
-            if (!keyword.trim()) {
-                resultBox.classList.remove('active');
-                return;
-            }
-
-            searchTimeout = setTimeout(() => {
-                fetchSuggestions(keyword.trim());
-            }, 300);
+            if (!keyword.trim()) { resultBox.classList.remove('active'); return; }
+            searchTimeout = setTimeout(() => fetchSuggestions(keyword.trim()), 300);
         }
 
         function fetchSuggestions(keyword) {
             const script = document.createElement('script');
-            script.src = `https://suggest3.sinajs.cn/suggest/type=11,12,13,14,15&key=${encodeURIComponent(keyword)}&name=suggestdata`;
+            script.charset = 'gbk';
+            script.src = `https://suggest3.sinajs.cn/suggest/type=11,12,13,14,15,41&key=${encodeURIComponent(keyword)}&name=suggestdata`;
             window.suggestdata = ''; 
-            
-            script.onload = () => {
-                renderSearchResults(window.suggestdata);
-                document.head.removeChild(script);
-            };
+            script.onload = () => { renderSearchResults(window.suggestdata); document.head.removeChild(script); };
             document.head.appendChild(script);
         }
 
-        // 核心修改：渲染搜索结果并加入判断状态
         function renderSearchResults(dataStr) {
             const resultBox = document.getElementById('searchResults');
-            if (!dataStr) {
-                resultBox.innerHTML = '<div style="padding: 15px; text-align: center; color: #8e8e93;">无结果</div>';
-                resultBox.classList.add('active');
-                return;
-            }
-
+            if (!dataStr) { resultBox.classList.remove('active'); return; }
             const items = dataStr.split(';').filter(i => i.trim() !== '');
             let htmlStr = '';
-            
             items.slice(0, 6).forEach(item => {
                 const parts = item.split(',');
                 if (parts.length >= 5) {
-                    const fullCode = parts[0];   
-                    const shortCode = parts[2];  
-                    const name = parts[4];       
-                    
-                    // 判断这只股票是否已经在自选池里了
+                    const fullCode = parts[0]; const shortCode = parts[2]; const name = parts[4];       
                     const isAdded = watchlist.includes(fullCode);
-                    
-                    // 动态生成按钮的样式和文字
-                    const btnHtml = isAdded 
-                        ? `<button class="s-add-btn added">已添加</button>`
-                        : `<button class="s-add-btn" onclick="event.stopPropagation(); addStockFromSearch('${fullCode}')">+ 自选</button>`;
-
-                    // 左侧信息负责跳转，右侧按钮负责添加
-                    htmlStr += `
-                        <div class="search-item">
-                            <div class="s-info" onclick="jumpToPersonal('${fullCode}')">
-                                <div class="s-name">${name}</div>
-                                <div class="s-code">${shortCode}</div>
-                            </div>
-                            ${btnHtml}
-                        </div>
-                    `;
+                    const btnHtml = isAdded ? `<button class="s-add-btn added">已添加</button>` : `<button class="s-add-btn" onclick="event.stopPropagation(); addStock('${fullCode}')">+ 自选</button>`;
+                    htmlStr += `<div class="s-item"><div style="flex:1" onclick="jumpToPersonal('${fullCode}')"><div class="stock-name">${name}</div><div class="stock-code">${shortCode}</div></div>${btnHtml}</div>`;
                 }
             });
-
             resultBox.innerHTML = htmlStr;
             resultBox.classList.add('active');
         }
 
-        function addStockFromSearch(fullCode) {
-            if (!watchlist.includes(fullCode)) {
-                watchlist.push(fullCode);
-                localStorage.setItem('myWatchlist', JSON.stringify(watchlist));
-            }
-            
-            // 刷新底部的自选列表
+        function addStock(code) {
+            if (!watchlist.includes(code)) { watchlist.push(code); localStorage.setItem('myWatchlist', JSON.stringify(watchlist)); }
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').classList.remove('active');
             refreshWatchlist();
-            // 重新渲染当前搜索结果（让刚才点击的按钮变成“已添加”状态）
-            renderSearchResults(window.suggestdata);
         }
 
-        // ================= 个人推演模块 =================
-        function saveParams() {
-            const params = { code: document.getElementById('stockCode').value.trim(), cost: document.getElementById('cost').value, shares: document.getElementById('shares').value, growth: document.getElementById('dailyGrowth').value };
-            localStorage.setItem('stockAppParams', JSON.stringify(params));
-            return params;
+        function removeStock(code) {
+            watchlist = watchlist.filter(c => c !== code);
+            localStorage.setItem('myWatchlist', JSON.stringify(watchlist));
+            refreshWatchlist();
         }
 
-        function loadSavedParams() {
-            const saved = localStorage.getItem('stockAppParams');
-            if (saved) {
-                const data = JSON.parse(saved);
-                if (data.code) document.getElementById('stockCode').value = data.code;
-                if (data.cost) document.getElementById('cost').value = data.cost;
-                if (data.shares) document.getElementById('shares').value = data.shares;
-                if (data.growth) document.getElementById('dailyGrowth').value = data.growth;
-            }
-        }
-
+        // ================= 各页面刷新逻辑 =================
         function jumpToPersonal(code) { 
             document.getElementById('searchResults').classList.remove('active');
             document.getElementById('searchInput').value = '';
@@ -323,64 +311,78 @@
         }
 
         async function refreshPersonal() {
-            const params = saveParams(); const cost = parseFloat(params.cost); const shares = parseFloat(params.shares); const growthRate = parseFloat(params.growth) / 100; const code = params.code;
+            const code = document.getElementById('stockCode').value.trim();
+            const cost = parseFloat(document.getElementById('cost').value);
+            const shares = parseFloat(document.getElementById('shares').value);
+            const growthRate = parseFloat(document.getElementById('dailyGrowth').value) / 100;
             if(!code) return;
+
             try {
-                const res = await fetch(`https://qt.gtimg.cn/q=${code}&t=${new Date().getTime()}`);
-                const parts = (await res.text()).split('~');
-                if (parts.length < 10) return;
-                const realPrice = parseFloat(parts[3]); const marketValue = realPrice * shares; const profit = marketValue - cost; const profitRate = (profit / cost) * 100; const breakevenPrice = cost / shares;
+                const dataObj = await fetchSafeData([code]);
+                if (!dataObj[code]) return;
+                
+                const stockData = parseStockString(code, dataObj[code]);
+                const realPrice = parseFloat(stockData.price);
+                
+                const marketValue = realPrice * shares; const profit = marketValue - cost; const profitRate = (profit / cost) * 100; const breakevenPrice = cost / shares;
                 
                 document.getElementById('currentPrice').innerText = realPrice.toFixed(2); document.getElementById('breakevenPrice').innerText = breakevenPrice.toFixed(2); document.getElementById('marketValue').innerText = formatNum(marketValue);
-                const profitEl = document.getElementById('profit'); profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit); profitEl.className = 'value ' + (profit > 0 ? 'text-red' : (profit < 0 ? 'text-green' : ''));
+                const profitEl = document.getElementById('profit'); profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit); profitEl.className = 'g-value ' + (profit > 0 ? 'text-red' : (profit < 0 ? 'text-green' : ''));
                 const rateEl = document.getElementById('profitRate'); rateEl.innerText = (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%'; rateEl.className = 'rate-badge ' + (profitRate > 0 ? 'text-red' : (profitRate < 0 ? 'text-green' : ''));
-                if(profitRate > 0) rateEl.style.backgroundColor = 'rgba(255, 59, 48, 0.1)'; else if(profitRate < 0) rateEl.style.backgroundColor = 'rgba(52, 199, 89, 0.1)';
 
                 const tbody = document.getElementById('projectionTable'); tbody.innerHTML = ''; let currentProjPrice = realPrice;
                 for (let i = 1; i <= 10; i++) {
                     let prevValue = currentProjPrice * shares; if (i > 1) { currentProjPrice = currentProjPrice * (1 + growthRate); }
                     let currentValue = currentProjPrice * shares; let dailyProfit = i === 1 ? profit : (currentValue - prevValue); 
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td style="color:var(--text-muted); font-weight:500;">T+${i-1}</td><td style="font-weight:600;">${currentProjPrice.toFixed(2)}</td><td>${formatNum(currentValue)}</td><td class="${dailyProfit > 0 ? 'text-red' : (dailyProfit < 0 ? 'text-green' : '')}" style="font-weight:600;">${dailyProfit > 0 ? '+' : ''}${formatNum(dailyProfit)}</td>`;
+                    tr.innerHTML = `<td>T+${i-1}</td><td style="font-weight:500;">${currentProjPrice.toFixed(2)}</td><td>${formatNum(currentValue)}</td><td class="${dailyProfit > 0 ? 'text-red' : (dailyProfit < 0 ? 'text-green' : '')}" style="font-weight:500;">${dailyProfit > 0 ? '+' : ''}${formatNum(dailyProfit)}</td>`;
                     tbody.appendChild(tr);
                 }
             } catch (e) {}
         }
 
-        // ================= 自选股模块 =================
-        function removeStock(code) { watchlist = watchlist.filter(c => c !== code); localStorage.setItem('myWatchlist', JSON.stringify(watchlist)); refreshWatchlist(); }
-
-        async function refreshWatchlist() {
-            if (watchlist.length === 0) { document.getElementById('watchlist-container').innerHTML = '<div style="padding:20px;text-align:center;color:#8e8e93;">暂无自选股票，请在上方搜索添加</div>'; return; }
+        async function renderStockList(codes, containerId, allowDelete = false) {
+            if (codes.length === 0) { document.getElementById(containerId).innerHTML = '<div style="padding:20px;text-align:center;color:#8e8e93;">暂无股票</div>'; return; }
             try {
-                const res = await fetch(`https://qt.gtimg.cn/q=${watchlist.join(',')}&t=${new Date().getTime()}`);
-                const stockDatas = (await res.text()).split(';').filter(s => s.trim().length > 0);
+                const dataObj = await fetchSafeData(codes);
                 let htmlStr = '';
-                stockDatas.forEach(item => {
-                    const parts = item.split('~'); if (parts.length < 32) return;
-                    const name = parts[1]; const codeMatch = item.match(/v_(.*?)="/); const code = codeMatch ? codeMatch[1] : parts[2]; 
-                    const price = parseFloat(parts[3]).toFixed(2); const changePercent = parseFloat(parts[32]);
-                    let colorClass = 'bg-gray'; let textClass = ''; let displayPercent = changePercent.toFixed(2) + '%';
-                    if (changePercent > 0) { colorClass = 'bg-red'; textClass = 'text-red'; displayPercent = '+' + displayPercent; } else if (changePercent < 0) { colorClass = 'bg-green'; textClass = 'text-green'; }
-                    htmlStr += `<div class="wl-item" onclick="jumpToPersonal('${code}')"><div class="wl-left"><div class="wl-name">${name}</div><div class="wl-code">${code.toUpperCase()}</div></div><div class="wl-mid ${textClass}">${price}</div><div class="wl-right"><div class="wl-badge ${colorClass}">${displayPercent}</div></div><div class="wl-delete" onclick="event.stopPropagation(); removeStock('${code}')">×</div></div>`;
+                codes.forEach(code => {
+                    if (!dataObj[code]) return;
+                    const { name, price, changePercent } = parseStockString(code, dataObj[code]);
+                    
+                    let colorClass = 'bg-gray'; let displayPercent = changePercent.toFixed(2) + '%';
+                    if (changePercent > 0) { colorClass = 'bg-red'; displayPercent = '+' + displayPercent; } else if (changePercent < 0) { colorClass = 'bg-green'; }
+                    
+                    const delHtml = allowDelete ? `<div class="stock-del" onclick="event.stopPropagation(); removeStock('${code}')">删除</div>` : '';
+                    
+                    htmlStr += `
+                        <div class="stock-item" onclick="jumpToPersonal('${code}')">
+                            <div class="stock-left"><div class="stock-name">${name}</div><div class="stock-code">${code.toUpperCase()}</div></div>
+                            <div class="stock-price ${changePercent > 0 ? 'text-red' : (changePercent < 0 ? 'text-green' : '')}">${price}</div>
+                            <div class="stock-badge-wrap"><div class="stock-badge ${colorClass}">${displayPercent}</div></div>
+                            ${delHtml}
+                        </div>
+                    `;
                 });
-                document.getElementById('watchlist-container').innerHTML = htmlStr;
+                document.getElementById(containerId).innerHTML = htmlStr;
             } catch (e) {}
         }
 
-        // ================= 初始化 =================
-        loadSavedParams(); refreshPersonal(); refreshWatchlist();
+        function refreshWatchlist() { renderStockList(watchlist, 'watchlist-container', true); }
+        function refreshMarket() { renderStockList(marketCN, 'market-cn', false); renderStockList(marketUS, 'market-us', false); }
+
+        // ================= 初始化与定时器 =================
+        refreshPersonal(); refreshWatchlist(); refreshMarket();
         
-        document.addEventListener('click', function(event) {
-            const searchContainer = document.querySelector('.search-container');
-            if (!searchContainer.contains(event.target)) {
-                document.getElementById('searchResults').classList.remove('active');
-            }
+        document.addEventListener('click', (e) => {
+            if (!document.querySelector('.search-bar').contains(e.target)) document.getElementById('searchResults').classList.remove('active');
         });
 
+        // 定时刷新当前所在标签页
         setInterval(() => {
             if (activeTab === 'personal') refreshPersonal();
             else if (activeTab === 'watchlist') refreshWatchlist();
+            else if (activeTab === 'market') refreshMarket();
         }, 3000);
 
     </script>
