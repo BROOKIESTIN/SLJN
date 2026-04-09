@@ -5,334 +5,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="持仓看板">
+    <meta name="apple-mobile-web-app-title" content="私人看板">
     <title>私人持仓推演</title>
     <style>
         :root {
-            --bg-color: #f2f2f7; /* iOS 系统标准灰色背景 */
+            --bg-color: #f2f2f7; 
             --card-bg: #ffffff;
             --text-main: #000000;
-            --text-muted: #8a8a8e;
+            --text-muted: #8e8e93;
             --red-up: #ff3b30; 
             --green-down: #34c759; 
             --blue-btn: #007aff;
-            --separator: #c6c6c8; /* iOS 分割线颜色 */
-            --nav-bg: rgba(249, 249, 249, 0.94);
+            --separator: #c6c6c8; 
         }
 
-        /* 核心修复：App 外壳固定，禁止整个 body 滚动，解决跳动和顶部白边问题 */
         html, body { 
             margin: 0; padding: 0; 
-            width: 100%; height: 100%; 
-            overflow: hidden; /* 核心：禁止视口滚动 */
             background-color: var(--bg-color); 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             color: var(--text-main); 
             -webkit-tap-highlight-color: transparent;
-            /* 核心：使用 Flex 布局填满全屏 */
-            display: flex;
-            flex-direction: column;
+            min-height: 100dvh; /* 保证背景色铺满全屏 */
         }
 
-        .header-spacer { height: env(safe-area-inset-top); background: var(--bg-color); flex-shrink: 0; }
-
-        /* 内容区容器，自适应填满剩余空间，并独立滚动 */
-        .main-container { 
-            flex: 1; /* 占据所有剩余空间 */
-            position: relative; /* 核心：作为内部绝对定位 tab-content 的参考源 */
-            overflow: hidden; /* 禁止自身滚动，允许子项滚动 */
+        /* 留出顶部刘海和底部小白条的安全距离 */
+        .container {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
         }
-
-        .tab-content { 
-            position: absolute; /* 在其容器内绝对定位 */
-            top: 0; left: 0; width: 100%; height: 100%; /* 填满 main-container */
-            overflow-y: auto; /* 核心：允许独立滚动 */
-            -webkit-overflow-scrolling: touch; /* iOS 顺滑滚动 */
-            display: none; /* 默认隐藏 */
-            animation: fadeIn 0.2s ease-out;
-            /* 核心：内边距缓冲，高度等于导航栏高度 + 安全区缓冲 */
-            padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
-        }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* ====== iOS 设置风格的基础组件 ====== */
         .ios-group-title { margin: 20px 16px 8px 32px; font-size: 13px; color: #6d6d72; text-transform: uppercase; font-weight: 500; display: flex; align-items: center; }
-        .ios-group { background: var(--card-bg); border-radius: 10px; margin: 0 16px 20px 16px; overflow: hidden; }
+        .ios-group { background: var(--card-bg); border-radius: 12px; margin: 0 16px 20px 16px; overflow: hidden; }
         
-        .ios-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; position: relative; background: #fff; }
+        .ios-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; position: relative; background: #fff; }
         .ios-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 0; height: 0.5px; background-color: var(--separator); }
         .ios-row label { font-size: 16px; color: var(--text-main); font-weight: 400; }
-        .ios-row input { text-align: right; font-size: 16px; border: none; outline: none; background: transparent; color: var(--text-muted); width: 120px; }
-        .ios-row .value-text { font-size: 16px; color: var(--text-muted); }
+        .ios-row input { text-align: right; font-size: 16px; border: none; outline: none; background: transparent; color: var(--blue-btn); font-weight: 500; width: 140px; }
         
-        /* 统计格子样式重构 */
+        /* 统计格子样式 */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; border-top: 0.5px solid var(--separator); }
-        .grid-item { padding: 12px 16px; position: relative; display: flex; flex-direction: column; justify-content: center; }
+        .grid-item { padding: 14px 16px; position: relative; display: flex; flex-direction: column; justify-content: center; }
         .grid-item:nth-child(odd)::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 0.5px; background-color: var(--separator); }
         .grid-item:nth-child(1), .grid-item:nth-child(2) { border-bottom: 0.5px solid var(--separator); }
         .grid-item .g-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-        .grid-item .g-value { font-size: 18px; font-weight: 600; }
+        .grid-item .g-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
         .text-red { color: var(--red-up); }
         .text-green { color: var(--green-down); }
         .bg-red { background-color: var(--red-up); color: white; }
         .bg-green { background-color: var(--green-down); color: white; }
 
-        /* 推演表格 */
         table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: right; }
-        th { color: var(--text-muted); font-weight: 400; padding: 10px 16px; border-bottom: 0.5px solid var(--separator); font-size: 12px; }
-        td { padding: 12px 0; padding-right: 16px; border-bottom: 0.5px solid var(--separator); font-variant-numeric: tabular-nums; }
+        th { color: var(--text-muted); font-weight: 400; padding: 12px 16px; border-bottom: 0.5px solid var(--separator); font-size: 12px; }
+        td { padding: 12px 16px; border-bottom: 0.5px solid var(--separator); font-variant-numeric: tabular-nums; }
         tr:last-child td { border-bottom: none; }
-        th:first-child, td:first-child { text-align: left; padding-left: 16px; }
+        th:first-child, td:first-child { text-align: left; }
 
-        .rate-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 14px; background: #f2f2f7; }
+        .rate-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 14px; background: #f2f2f7; font-variant-numeric: tabular-nums;}
         .live-dot { width: 8px; height: 8px; background-color: var(--green-down); border-radius: 50%; margin-left: 8px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6); } 70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
 
-        /* ====== 核心修复：底部导航栏绝对固定到视口底部 ====== */
-        .bottom-nav { 
-            position: absolute; /* 相对于 body（视口）底部定位 */
-            bottom: 0; left: 0; width: 100%; 
-            height: calc(60px + env(safe-area-inset-bottom)); 
-            background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-            border-top: 0.5px solid rgba(0,0,0,0.2); 
-            display: flex; 
-            padding-bottom: env(safe-area-inset-bottom); /* 核心：缓冲小白条安全区 */
-            z-index: 100; /* 核心：始终在内容之上 */
-            flex-shrink: 0; /* 禁止作为 Flex 子项缩水 */
-        }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; }
-        .nav-item.active { color: var(--blue-btn); }
-        .nav-icon { font-size: 24px; margin-bottom: 2px; }
-
-        /* ====== 自选 & 行情列表样式 ====== */
-        .search-bar { background: #e3e3e8; border-radius: 10px; padding: 8px 12px; margin: 0 16px 16px 16px; display: flex; align-items: center; }
-        .search-bar input { flex: 1; border: none; background: transparent; font-size: 16px; outline: none; }
-        
-        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 0.5px solid var(--separator); background: #fff; cursor: pointer; }
-        .stock-item:last-child { border-bottom: none; }
-        .stock-left { flex: 1; }
-        .stock-name { font-size: 16px; font-weight: 500; color: var(--text-main); }
-        .stock-code { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-        .stock-price { font-size: 18px; font-weight: 600; flex: 1; text-align: right; padding-right: 15px; font-variant-numeric: tabular-nums; }
-        .stock-badge-wrap { width: 75px; text-align: right; }
-        .stock-badge { display: inline-block; width: 100%; padding: 6px 0; border-radius: 6px; text-align: center; font-weight: 600; font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; }
-        .stock-del { color: var(--red-up); font-size: 14px; padding: 5px; margin-left: 8px; }
-
-        /* 搜索悬浮层 */
-        .search-results { display: none; position: absolute; top: 120px; left: 16px; right: 16px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 50; max-height: 250px; overflow-y: auto; }
-        .search-results.active { display: block; }
-        .s-item { padding: 12px 16px; border-bottom: 0.5px solid var(--separator); display: flex; justify-content: space-between; align-items: center; }
-        .s-add-btn { background: #f2f2f7; color: var(--blue-btn); border: none; padding: 6px 14px; border-radius: 12px; font-weight: 600; font-size: 13px; }
-        .s-add-btn.added { background: transparent; color: var(--text-muted); pointer-events: none; }
     </style>
 </head>
 <body>
-    <div class="header-spacer"></div>
-
-    <div class="main-container">
-        <div id="tab-personal" class="tab-content active">
-            <div class="ios-group-title">配置参数</div>
-            <div class="ios-group">
-                <div class="ios-row">
-                    <label>股票代码</label>
-                    <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
-                </div>
-                <div class="ios-row">
-                    <label>初始总成本</label>
-                    <input type="number" id="cost" value="385000">
-                </div>
-                <div class="ios-row">
-                    <label>持仓股数</label>
-                    <input type="number" id="shares" value="26200">
-                </div>
-                <div class="ios-row">
-                    <label>预期日涨幅(%)</label>
-                    <input type="number" id="dailyGrowth" value="10" step="0.1">
-                </div>
+    <div class="container">
+        
+        <div class="ios-group-title">配置参数</div>
+        <div class="ios-group">
+            <div class="ios-row">
+                <label>股票代码</label>
+                <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
             </div>
-
-            <div class="ios-group-title">
-                实时看板 <div class="live-dot"></div>
-                <span id="profitRate" class="rate-badge" style="margin-left: auto; margin-right: 16px;">--</span>
+            <div class="ios-row">
+                <label>初始总成本</label>
+                <input type="number" id="cost" value="385000">
             </div>
-            <div class="ios-group">
-                <div class="grid-2">
-                    <div class="grid-item"><div class="g-label">最新股价</div><div class="g-value" id="currentPrice">--</div></div>
-                    <div class="grid-item"><div class="g-label">当前市值</div><div class="g-value" id="marketValue">--</div></div>
-                    <div class="grid-item"><div class="g-label">回本股价</div><div class="g-value" id="breakevenPrice">--</div></div>
-                    <div class="grid-item"><div class="g-label">浮动盈亏</div><div class="g-value" id="profit">--</div></div>
-                </div>
+            <div class="ios-row">
+                <label>持仓股数</label>
+                <input type="number" id="shares" value="26200">
             </div>
-
-            <div class="ios-group-title">T+10 预期推演</div>
-            <div class="ios-group">
-                <table>
-                    <thead><tr><th>交易日</th><th>预期股价</th><th>预期市值</th><th>单日浮动</th></tr></thead>
-                    <tbody id="projectionTable"></tbody>
-                </table>
+            <div class="ios-row">
+                <label>预期日涨幅(%)</label>
+                <input type="number" id="dailyGrowth" value="10" step="0.1">
             </div>
         </div>
 
-        <div id="tab-watchlist" class="tab-content">
-            <div class="ios-group-title">搜索添加</div>
-            <div class="search-bar">
-                <span style="margin-right: 8px;">🔍</span>
-                <input type="text" id="searchInput" placeholder="搜索股票代码、汉字或拼音" oninput="handleSearch(this.value)" autocomplete="off">
+        <div class="ios-group-title">
+            实时看板 <div class="live-dot"></div>
+            <span id="profitRate" class="rate-badge" style="margin-left: auto; margin-right: 16px;">--</span>
+        </div>
+        <div class="ios-group">
+            <div class="grid-2">
+                <div class="grid-item"><div class="g-label">最新股价</div><div class="g-value" id="currentPrice">--</div></div>
+                <div class="grid-item"><div class="g-label">当前市值</div><div class="g-value" id="marketValue">--</div></div>
+                <div class="grid-item"><div class="g-label">回本股价</div><div class="g-value" id="breakevenPrice">--</div></div>
+                <div class="grid-item"><div class="g-label">浮动盈亏</div><div class="g-value" id="profit">--</div></div>
             </div>
-            
-            <div id="searchResults" class="search-results"></div>
-
-            <div class="ios-group-title">我的自选 <div class="live-dot"></div></div>
-            <div class="ios-group" id="watchlist-container">
-                </div>
         </div>
 
-        <div id="tab-market" class="tab-content">
-            <div class="ios-group-title">A股大盘 <div class="live-dot"></div></div>
-            <div class="ios-group" id="market-cn">
-                </div>
-
-            <div class="ios-group-title">美股大盘</div>
-            <div class="ios-group" id="market-us">
-                </div>
+        <div class="ios-group-title">T+10 预期推演</div>
+        <div class="ios-group">
+            <table>
+                <thead><tr><th>交易日</th><th>预期股价</th><th>预期市值</th><th>单日浮动</th></tr></thead>
+                <tbody id="projectionTable"></tbody>
+            </table>
         </div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active" id="nav-personal" onclick="switchTab('personal')"><div class="nav-icon">👤</div><div>推演</div></div>
-        <div class="nav-item" id="nav-watchlist" onclick="switchTab('watchlist')"><div class="nav-icon">⭐</div><div>自选</div></div>
-        <div class="nav-item" id="nav-market" onclick="switchTab('market')"><div class="nav-icon">🌐</div><div>行情</div></div>
+        
     </div>
 
     <script>
-        // ================= 全局状态与基础函数 =================
-        let activeTab = 'personal';
-        // 默认内置上证指数和双良节能
-        let watchlist = JSON.parse(localStorage.getItem('myWatchlist')) || ['sh000001', 'sh600481'];
-        
-        // 预设的大盘指数代码
-        const marketCN = ['sh000001', 'sz399001', 'sz399006']; // 上证, 深证, 创业板
-        const marketUS = ['usDJI', 'usIXIC', 'usINX']; // 道琼斯, 纳斯达克, 标普500
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            document.getElementById(`nav-${tabName}`).classList.add('active');
-            activeTab = tabName;
-            
-            document.getElementById('searchResults').classList.remove('active');
-            
-            // 切换标签时立刻刷新对应数据
-            if(tabName === 'personal') refreshPersonal();
-            if(tabName === 'watchlist') refreshWatchlist();
-            if(tabName === 'market') refreshMarket();
+        // 格式化数字
+        function formatNum(num) { 
+            return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
         }
 
-        function formatNum(num) { return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-
-        // ================= 核心修复：GBK 编码安全拉取数据函数 =================
-        function fetchSafeData(codesArray) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                // 核心：强制指定为 GBK 编码，彻底解决乱码！
-                script.charset = 'gbk';
-                script.src = `https://qt.gtimg.cn/q=${codesArray.join(',')}&t=${new Date().getTime()}`;
-                
-                // 借用浏览器的 GBK 解析机制，处理中文
-                script.onload = () => {
-                    const results = {};
-                    codesArray.forEach(code => {
-                        if (window['v_' + code]) {
-                            results[code] = window['v_' + code];
-                        }
-                    });
-                    document.head.removeChild(script);
-                    resolve(results);
-                };
-                script.onerror = () => reject();
-                document.head.appendChild(script);
-            });
-        }
-
-        // 解析腾讯不同类型股票的数据结构
-        function parseStockString(code, dataStr) {
-            const parts = dataStr.split('~');
-            let name = parts[1];
-            let price, changePercent;
-
-            if (code.startsWith('us')) {
-                // 美股格式略有不同
-                price = parseFloat(parts[3]).toFixed(2);
-                let prevClose = parseFloat(parts[4]);
-                changePercent = ((parseFloat(price) - prevClose) / prevClose * 100);
-            } else {
-                // A股格式
-                price = parseFloat(parts[3]).toFixed(2);
-                changePercent = parseFloat(parts[32]);
-                if (isNaN(changePercent)) { // 部分指数代码的兼容处理
-                    let prevClose = parseFloat(parts[4]);
-                    changePercent = ((parseFloat(price) - prevClose) / prevClose * 100);
-                }
-            }
-            return { name, price, changePercent: changePercent || 0 };
-        }
-
-        // ================= 搜索联想模块 =================
-        let searchTimeout = null;
-        function handleSearch(keyword) {
-            clearTimeout(searchTimeout);
-            const resultBox = document.getElementById('searchResults');
-            if (!keyword.trim()) { resultBox.classList.remove('active'); return; }
-            searchTimeout = setTimeout(() => fetchSuggestions(keyword.trim()), 300);
-        }
-
-        function fetchSuggestions(keyword) {
-            const script = document.createElement('script');
-            script.charset = 'gbk';
-            script.src = `https://suggest3.sinajs.cn/suggest/type=11,12,13,14,15&key=${encodeURIComponent(keyword)}&name=suggestdata`;
-            window.suggestdata = ''; 
-            script.onload = () => { renderSearchResults(window.suggestdata); document.head.removeChild(script); };
-            document.head.appendChild(script);
-        }
-
-        function renderSearchResults(dataStr) {
-            const resultBox = document.getElementById('searchResults');
-            if (!dataStr) { resultBox.classList.remove('active'); return; }
-            const items = dataStr.split(';').filter(i => i.trim() !== '');
-            let htmlStr = '';
-            items.slice(0, 6).forEach(item => {
-                const parts = item.split(',');
-                if (parts.length >= 5) {
-                    const fullCode = parts[0]; const shortCode = parts[2]; const name = parts[4];       
-                    const isAdded = watchlist.includes(fullCode);
-                    const btnHtml = isAdded ? `<button class="s-add-btn added">已添加</button>` : `<button class="s-add-btn" onclick="event.stopPropagation(); addStock('${fullCode}')">+ 自选</button>`;
-                    htmlStr += `<div class="s-item"><div style="flex:1" onclick="jumpToPersonal('${fullCode}')"><div class="stock-name">${name}</div><div class="stock-code">${shortCode}</div></div>${btnHtml}</div>`;
-                }
-            });
-            resultBox.innerHTML = htmlStr;
-            resultBox.classList.add('active');
-        }
-
-        function addStock(code) {
-            if (!watchlist.includes(code)) { watchlist.push(code); localStorage.setItem('myWatchlist', JSON.stringify(watchlist)); }
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchResults').classList.remove('active');
-            refreshWatchlist();
-        }
-
-        function removeStock(code) {
-            watchlist = watchlist.filter(c => c !== code);
-            localStorage.setItem('myWatchlist', JSON.stringify(watchlist));
-            refreshWatchlist();
-        }
-
-        // ================= 各标签页刷新逻辑 =================
+        // 本地存储参数
         function saveParams() {
-            const params = { code: document.getElementById('stockCode').value.trim(), cost: document.getElementById('cost').value, shares: document.getElementById('shares').value, growth: document.getElementById('dailyGrowth').value };
+            const params = { 
+                code: document.getElementById('stockCode').value.trim(), 
+                cost: document.getElementById('cost').value, 
+                shares: document.getElementById('shares').value, 
+                growth: document.getElementById('dailyGrowth').value 
+            };
             localStorage.setItem('stockAppParams', JSON.stringify(params));
             return params;
         }
@@ -348,81 +143,92 @@
             }
         }
 
-        function jumpToPersonal(code) { 
-            document.getElementById('searchResults').classList.remove('active');
-            document.getElementById('searchInput').value = '';
-            document.getElementById('stockCode').value = code; 
-            switchTab('personal'); 
+        // GBK 编码安全拉取数据
+        function fetchSafeData(code) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.charset = 'gbk';
+                script.src = `https://qt.gtimg.cn/q=${code}&t=${new Date().getTime()}`;
+                
+                script.onload = () => {
+                    if (window['v_' + code]) resolve(window['v_' + code]);
+                    else reject();
+                    document.head.removeChild(script);
+                };
+                script.onerror = () => reject();
+                document.head.appendChild(script);
+            });
         }
 
-        async function refreshPersonal() {
-            const params = saveParams(); const cost = parseFloat(params.cost); const shares = parseFloat(params.shares); const growthRate = parseFloat(params.growth) / 100; const code = params.code;
+        // 核心刷新逻辑
+        async function refreshData() {
+            const params = saveParams(); 
+            const cost = parseFloat(params.cost); 
+            const shares = parseFloat(params.shares); 
+            const growthRate = parseFloat(params.growth) / 100; 
+            const code = params.code;
+            
             if(!code) return;
-            try {
-                // 使用 GBK 安全函数
-                const dataObj = await fetchSafeData([code]);
-                if (!dataObj[code]) return;
-                
-                // 解析数据
-                const stockData = parseStockString(code, dataObj[code]);
-                const realPrice = parseFloat(stockData.price);
-                
-                const marketValue = realPrice * shares; const profit = marketValue - cost; const profitRate = (profit / cost) * 100; const breakevenPrice = cost / shares;
-                
-                document.getElementById('currentPrice').innerText = realPrice.toFixed(2); document.getElementById('breakevenPrice').innerText = breakevenPrice.toFixed(2); document.getElementById('marketValue').innerText = formatNum(marketValue);
-                const profitEl = document.getElementById('profit'); profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit); profitEl.className = 'g-value ' + (profit > 0 ? 'text-red' : (profit < 0 ? 'text-green' : ''));
-                const rateEl = document.getElementById('profitRate'); rateEl.innerText = (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%'; rateEl.className = 'rate-badge ' + (profitRate > 0 ? 'text-red' : (profitRate < 0 ? 'text-green' : ''));
-                if(profitRate > 0) rateEl.style.backgroundColor = 'rgba(255, 59, 48, 0.1)'; else if(profitRate < 0) rateEl.style.backgroundColor = 'rgba(52, 199, 89, 0.1)';
 
-                const tbody = document.getElementById('projectionTable'); tbody.innerHTML = ''; let currentProjPrice = realPrice;
+            try {
+                const dataStr = await fetchSafeData(code);
+                const parts = dataStr.split('~');
+                if (parts.length < 10) return;
+                
+                const realPrice = parseFloat(parts[3]);
+                const marketValue = realPrice * shares; 
+                const profit = marketValue - cost; 
+                const profitRate = (profit / cost) * 100; 
+                const breakevenPrice = cost / shares;
+                
+                // 更新看板 UI
+                document.getElementById('currentPrice').innerText = realPrice.toFixed(2); 
+                document.getElementById('breakevenPrice').innerText = breakevenPrice.toFixed(2); 
+                document.getElementById('marketValue').innerText = formatNum(marketValue);
+                
+                const profitEl = document.getElementById('profit'); 
+                profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit); 
+                profitEl.className = 'g-value ' + (profit > 0 ? 'text-red' : (profit < 0 ? 'text-green' : ''));
+                
+                const rateEl = document.getElementById('profitRate'); 
+                rateEl.innerText = (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%'; 
+                rateEl.className = 'rate-badge ' + (profitRate > 0 ? 'text-red' : (profitRate < 0 ? 'text-green' : ''));
+                if(profitRate > 0) rateEl.style.backgroundColor = 'rgba(255, 59, 48, 0.1)'; 
+                else if(profitRate < 0) rateEl.style.backgroundColor = 'rgba(52, 199, 89, 0.1)';
+
+                // 更新表格
+                const tbody = document.getElementById('projectionTable'); 
+                tbody.innerHTML = ''; 
+                let currentProjPrice = realPrice;
+                
                 for (let i = 1; i <= 10; i++) {
-                    let prevValue = currentProjPrice * shares; if (i > 1) { currentProjPrice = currentProjPrice * (1 + growthRate); }
-                    let currentValue = currentProjPrice * shares; let dailyProfit = i === 1 ? profit : (currentValue - prevValue); 
+                    let prevValue = currentProjPrice * shares; 
+                    if (i > 1) { currentProjPrice = currentProjPrice * (1 + growthRate); }
+                    let currentValue = currentProjPrice * shares; 
+                    let dailyProfit = i === 1 ? profit : (currentValue - prevValue); 
+                    
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td style="color:var(--text-muted); font-weight:500;">T+${i-1}</td><td style="font-weight:600;">${currentProjPrice.toFixed(2)}</td><td>${formatNum(currentValue)}</td><td class="${dailyProfit > 0 ? 'text-red' : (dailyProfit < 0 ? 'text-green' : '')}" style="font-weight:600;">${dailyProfit > 0 ? '+' : ''}${formatNum(dailyProfit)}</td>`;
+                    tr.innerHTML = `
+                        <td>T+${i-1}</td>
+                        <td style="font-weight:500;">${currentProjPrice.toFixed(2)}</td>
+                        <td>${formatNum(currentValue)}</td>
+                        <td class="${dailyProfit > 0 ? 'text-red' : (dailyProfit < 0 ? 'text-green' : '')}" style="font-weight:500;">
+                            ${dailyProfit > 0 ? '+' : ''}${formatNum(dailyProfit)}
+                        </td>
+                    `;
                     tbody.appendChild(tr);
                 }
-            } catch (error) { console.log('拉取数据失败'); }
+            } catch (error) { 
+                console.log('拉取数据失败'); 
+            }
         }
 
-        async function renderStockList(codes, containerId, allowDelete = false) {
-            if (codes.length === 0) { document.getElementById(containerId).innerHTML = '<div style="padding:20px;text-align:center;color:#8e8e93;">暂无股票</div>'; return; }
-            try {
-                // 使用 gbk 安全接口拉取所有数据
-                const dataObj = await fetchSafeData(codes);
-                let htmlStr = '';
-                codes.forEach(code => {
-                    if (!dataObj[code]) return;
-                    // 解析
-                    const { name, price, changePercent } = parseStockString(code, dataObj[code]);
-                    
-                    let colorClass = 'bg-gray'; let textClass = ''; let displayPercent = changePercent.toFixed(2) + '%';
-                    if (changePercent > 0) { colorClass = 'bg-red'; textClass = 'text-red'; displayPercent = '+' + displayPercent; } else if (changePercent < 0) { colorClass = 'bg-green'; textClass = 'text-green'; }
-                    
-                    const delHtml = allowDelete ? `<div class="stock-del" onclick="event.stopPropagation(); removeStock('${code}')">删除</div>` : '';
-                    
-                    htmlStr += `<div class="stock-item" onclick="jumpToPersonal('${code}')"><div class="stock-left"><div class="stock-name">${name}</div><div class="stock-code">${code.toUpperCase()}</div></div><div class="stock-price ${textClass}">${price}</div><div class="stock-badge-wrap"><div class="stock-badge ${colorClass}">${displayPercent}</div></div>${delHtml}</div>`;
-                });
-                document.getElementById(containerId).innerHTML = htmlStr;
-            } catch (error) { console.log('拉取数据失败'); }
-        }
-
-        function refreshWatchlist() { renderStockList(watchlist, 'watchlist-container', true); }
-        function refreshMarket() { renderStockList(marketCN, 'market-cn', false); renderStockList(marketUS, 'market-us', false); }
-
-        // ================= 初始化与定时器 =================
-        loadSavedParams(); refreshPersonal(); refreshWatchlist(); refreshMarket();
+        // 初始化
+        loadSavedParams(); 
+        refreshData(); 
         
-        document.addEventListener('click', (e) => {
-            if (!document.querySelector('.search-bar').contains(e.target)) document.getElementById('searchResults').classList.remove('active');
-        });
-
-        // 核心定时器：每 3 秒刷新一次当前激活页面
-        setInterval(() => {
-            if (activeTab === 'personal') refreshPersonal();
-            else if (activeTab === 'watchlist') refreshWatchlist();
-            else if (activeTab === 'market') refreshMarket();
-        }, 3000);
+        // 每 3 秒自动刷新一次
+        setInterval(refreshData, 3000);
 
     </script>
 </body>
