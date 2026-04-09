@@ -13,9 +13,10 @@
             --card-bg: #ffffff;
             --text-main: #1c1c1e;
             --text-muted: #8e8e93;
-            --red-up: #ff3b30; /* iOS 系统红 */
-            --green-down: #34c759; /* iOS 系统绿 */
+            --red-up: #ff3b30; 
+            --green-down: #34c759; 
             --blue-btn: #007aff;
+            --nav-bg: rgba(255, 255, 255, 0.85);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -24,66 +25,31 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             background-color: var(--bg-color); 
             margin: 0; 
-            padding: 20px 16px env(safe-area-inset-bottom) 16px; 
+            padding: 20px 16px calc(env(safe-area-inset-bottom) + 80px) 16px; 
             color: var(--text-main); 
         }
 
-        /* 顶部安全区域适配，防止被刘海遮挡 */
-        .header-spacer { height: env(safe-area-inset-top); margin-bottom: 10px; }
+        .header-spacer { height: env(safe-area-inset-top); margin-bottom: 5px; }
 
-        .card { 
-            background: var(--card-bg); 
-            border-radius: 16px; 
-            padding: 20px; 
-            margin-bottom: 16px; 
-            box-shadow: 0 4px 24px rgba(0,0,0,0.04); 
-        }
+        .card { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); }
+        h2 { margin: 0 0 16px 0; font-size: 18px; font-weight: 600; letter-spacing: -0.5px; display: flex; align-items: center; }
 
-        h2 { 
-            margin: 0 0 16px 0; 
-            font-size: 18px; 
-            font-weight: 600; 
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-group { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 12px 0;
-            border-bottom: 0.5px solid #e5e5ea;
-        }
+        .input-group { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #e5e5ea; }
         .input-group:last-child { border-bottom: none; padding-bottom: 0; }
         .input-group label { font-size: 15px; color: var(--text-main); font-weight: 500;}
-        .input-group input { 
-            width: 140px; 
-            padding: 8px 12px; 
-            background: #f2f2f7;
-            border: none; 
-            border-radius: 8px; 
-            text-align: right; 
-            font-size: 16px;
-            font-weight: 600;
-            outline: none;
-        }
+        .input-group input { width: 140px; padding: 8px 12px; background: #f2f2f7; border: none; border-radius: 8px; text-align: right; font-size: 16px; font-weight: 600; outline: none; }
         .input-group input:focus { background: #e5e5ea; }
 
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-box { 
-            background: rgba(242, 242, 247, 0.6); 
-            padding: 16px; 
-            border-radius: 12px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+        .stat-box { background: rgba(242, 242, 247, 0.6); padding: 16px; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; }
         .stat-box .label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; }
         .stat-box .value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
 
         .text-red { color: var(--red-up); }
         .text-green { color: var(--green-down); }
+        .bg-red { background-color: var(--red-up); color: white; }
+        .bg-green { background-color: var(--green-down); color: white; }
+        .bg-gray { background-color: var(--text-muted); color: white; }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; text-align: right; }
         th { color: var(--text-muted); font-weight: 500; padding-bottom: 12px; border-bottom: 0.5px solid #e5e5ea; font-size: 12px;}
@@ -91,101 +57,253 @@
         tr:last-child td { border-bottom: none; }
         th:first-child, td:first-child { text-align: left; }
 
-        button { 
-            width: 100%; 
-            background: var(--blue-btn); 
-            color: white; 
-            border: none; 
-            padding: 16px; 
-            border-radius: 14px; 
-            font-size: 17px; 
-            font-weight: 600;
-            margin-top: 8px; 
-            cursor: pointer; 
-            transition: opacity 0.2s;
-            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-        }
-        button:active { opacity: 0.7; }
+        .rate-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px; background: #f2f2f7; }
+
+        .live-dot { width: 8px; height: 8px; background-color: var(--green-down); border-radius: 50%; margin-left: 8px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: calc(60px + env(safe-area-inset-bottom)); background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; }
+        .nav-item.active { color: var(--blue-btn); }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+
+        /* ====== 搜索栏与联想池样式 ====== */
+        .search-container { position: relative; margin-bottom: 16px; }
+        .search-bar { display: flex; background: #e5e5ea; border-radius: 10px; padding: 10px 14px; align-items: center; }
+        .search-bar input { flex: 1; border: none; background: transparent; font-size: 16px; outline: none; }
         
-        .rate-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 14px;
-            background: #f2f2f7;
+        .search-results { 
+            display: none; position: absolute; top: 50px; left: 0; width: 100%; 
+            background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); 
+            z-index: 50; max-height: 280px; overflow-y: auto; border: 1px solid #f2f2f7;
         }
+        .search-results.active { display: block; }
+        .search-item { padding: 14px 16px; border-bottom: 0.5px solid #f2f2f7; display: flex; justify-content: space-between; align-items: center; }
+        .search-item:last-child { border-bottom: none; }
+        
+        .s-info { flex: 1; cursor: pointer; }
+        .s-info:active { opacity: 0.6; }
+        .s-name { font-size: 16px; font-weight: 600; color: var(--text-main); }
+        .s-code { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 2px;}
+        
+        /* 新增：自选按钮样式 */
+        .s-add-btn {
+            background: #f2f2f7;
+            color: var(--blue-btn);
+            border: none;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .s-add-btn:active { opacity: 0.7; }
+        .s-add-btn.added {
+            background: transparent;
+            color: var(--text-muted);
+            pointer-events: none; /* 已添加后禁止点击 */
+        }
+
+        /* 自选股列表 */
+        .wl-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 0.5px solid #e5e5ea; cursor: pointer; }
+        .wl-item:last-child { border-bottom: none; }
+        .wl-left { flex: 1; }
+        .wl-name { font-size: 16px; font-weight: 600; color: var(--text-main); }
+        .wl-code { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+        .wl-mid { flex: 1; text-align: right; font-size: 20px; font-weight: 700; padding-right: 15px; font-variant-numeric: tabular-nums;}
+        .wl-right { width: 80px; text-align: right; }
+        .wl-badge { display: inline-block; width: 100%; padding: 8px 0; border-radius: 6px; text-align: center; font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
+        .wl-delete { color: var(--text-muted); font-size: 20px; padding: 10px; margin-left: 5px; }
+
     </style>
 </head>
 <body>
     <div class="header-spacer"></div>
 
-    <div class="card">
-        <h2>⚙️ 参数设置</h2>
-        <div class="input-group">
-            <label>股票代码</label>
-            <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
+    <div id="tab-personal" class="tab-content active">
+        <div class="card">
+            <h2>⚙️ 参数设置</h2>
+            <div class="input-group">
+                <label>股票代码</label>
+                <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
+            </div>
+            <div class="input-group">
+                <label>初始总成本</label>
+                <input type="number" id="cost" value="385000">
+            </div>
+            <div class="input-group">
+                <label>持仓股数</label>
+                <input type="number" id="shares" value="26200">
+            </div>
+            <div class="input-group">
+                <label>预期日涨幅(%)</label>
+                <input type="number" id="dailyGrowth" value="10" step="0.1">
+            </div>
         </div>
-        <div class="input-group">
-            <label>初始总成本</label>
-            <input type="number" id="cost" value="385000">
+
+        <div class="card" style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0;">📊 实时看板 <div class="live-dot"></div></h2>
+                <div id="profitRate" class="rate-badge">--</div>
+            </div>
+            <div class="grid-2">
+                <div class="stat-box"><div class="label">最新股价</div><div class="value" id="currentPrice">--</div></div>
+                <div class="stat-box"><div class="label">当前市值</div><div class="value" id="marketValue">--</div></div>
+                <div class="stat-box"><div class="label">回本股价</div><div class="value" id="breakevenPrice">--</div></div>
+                <div class="stat-box"><div class="label">浮动盈亏</div><div class="value" id="profit">--</div></div>
+            </div>
         </div>
-        <div class="input-group">
-            <label>持仓股数</label>
-            <input type="number" id="shares" value="26200">
-        </div>
-        <div class="input-group">
-            <label>预期日涨幅(%)</label>
-            <input type="number" id="dailyGrowth" value="10" step="0.1">
+
+        <div class="card">
+            <h2>📈 T+10 预期推演</h2>
+            <table>
+                <thead><tr><th>交易日</th><th>预期股价</th><th>预期市值</th><th>单日浮动</th></tr></thead>
+                <tbody id="projectionTable"></tbody>
+            </table>
         </div>
     </div>
 
-    <button id="refreshBtn" onclick="refreshData()">⚡️ 获取实时行情</button>
+    <div id="tab-watchlist" class="tab-content">
+        <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
+            <h2 style="padding: 10px 0;">⭐ 我的自选 <div class="live-dot" style="margin-left:auto;"></div></h2>
+            
+            <div class="search-container">
+                <div class="search-bar">
+                    <span style="margin-right: 8px; font-size: 14px;">🔍</span>
+                    <input type="text" id="searchInput" placeholder="搜索股票代码、汉字或拼音缩写" oninput="handleSearch(this.value)" autocomplete="off">
+                </div>
+                <div id="searchResults" class="search-results">
+                    </div>
+            </div>
 
-    <div class="card" style="margin-top: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h2 style="margin: 0;">📊 实时看板</h2>
-            <div id="profitRate" class="rate-badge">--</div>
-        </div>
-        
-        <div class="grid-2">
-            <div class="stat-box">
-                <div class="label">最新股价</div>
-                <div class="value" id="currentPrice">--</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">当前市值</div>
-                <div class="value" id="marketValue">--</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">回本股价</div>
-                <div class="value" id="breakevenPrice">--</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">浮动盈亏</div>
-                <div class="value" id="profit">--</div>
+            <div class="card" style="padding: 0 16px;">
+                <div id="watchlist-container"></div>
             </div>
         </div>
     </div>
 
-    <div class="card">
-        <h2>📈 T+10 预期推演</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>交易日</th>
-                    <th>预期股价</th>
-                    <th>预期市值</th>
-                    <th>单日浮动</th>
-                </tr>
-            </thead>
-            <tbody id="projectionTable">
-                </tbody>
-        </table>
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-personal" onclick="switchTab('personal')"><div class="nav-icon">👤</div><div>个人</div></div>
+        <div class="nav-item" id="nav-watchlist" onclick="switchTab('watchlist')"><div class="nav-icon">📈</div><div>自选股票</div></div>
     </div>
 
     <script>
-        // 1. 本地存储逻辑：初始化时加载上次保存的数据
+        let activeTab = 'personal';
+        let watchlist = JSON.parse(localStorage.getItem('myWatchlist')) || ['sh000001', 'sh600481'];
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.getElementById(`nav-${tabName}`).classList.add('active');
+            activeTab = tabName;
+            
+            if(tabName === 'personal') {
+                document.getElementById('searchResults').classList.remove('active');
+                refreshPersonal();
+            }
+            if(tabName === 'watchlist') refreshWatchlist();
+        }
+
+        function formatNum(num) { return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+        // ================= 搜索联想模块 =================
+        let searchTimeout = null;
+
+        function handleSearch(keyword) {
+            clearTimeout(searchTimeout);
+            const resultBox = document.getElementById('searchResults');
+            
+            if (!keyword.trim()) {
+                resultBox.classList.remove('active');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetchSuggestions(keyword.trim());
+            }, 300);
+        }
+
+        function fetchSuggestions(keyword) {
+            const script = document.createElement('script');
+            script.src = `https://suggest3.sinajs.cn/suggest/type=11,12,13,14,15&key=${encodeURIComponent(keyword)}&name=suggestdata`;
+            window.suggestdata = ''; 
+            
+            script.onload = () => {
+                renderSearchResults(window.suggestdata);
+                document.head.removeChild(script);
+            };
+            document.head.appendChild(script);
+        }
+
+        // 核心修改：渲染搜索结果并加入判断状态
+        function renderSearchResults(dataStr) {
+            const resultBox = document.getElementById('searchResults');
+            if (!dataStr) {
+                resultBox.innerHTML = '<div style="padding: 15px; text-align: center; color: #8e8e93;">无结果</div>';
+                resultBox.classList.add('active');
+                return;
+            }
+
+            const items = dataStr.split(';').filter(i => i.trim() !== '');
+            let htmlStr = '';
+            
+            items.slice(0, 6).forEach(item => {
+                const parts = item.split(',');
+                if (parts.length >= 5) {
+                    const fullCode = parts[0];   
+                    const shortCode = parts[2];  
+                    const name = parts[4];       
+                    
+                    // 判断这只股票是否已经在自选池里了
+                    const isAdded = watchlist.includes(fullCode);
+                    
+                    // 动态生成按钮的样式和文字
+                    const btnHtml = isAdded 
+                        ? `<button class="s-add-btn added">已添加</button>`
+                        : `<button class="s-add-btn" onclick="event.stopPropagation(); addStockFromSearch('${fullCode}')">+ 自选</button>`;
+
+                    // 左侧信息负责跳转，右侧按钮负责添加
+                    htmlStr += `
+                        <div class="search-item">
+                            <div class="s-info" onclick="jumpToPersonal('${fullCode}')">
+                                <div class="s-name">${name}</div>
+                                <div class="s-code">${shortCode}</div>
+                            </div>
+                            ${btnHtml}
+                        </div>
+                    `;
+                }
+            });
+
+            resultBox.innerHTML = htmlStr;
+            resultBox.classList.add('active');
+        }
+
+        function addStockFromSearch(fullCode) {
+            if (!watchlist.includes(fullCode)) {
+                watchlist.push(fullCode);
+                localStorage.setItem('myWatchlist', JSON.stringify(watchlist));
+            }
+            
+            // 刷新底部的自选列表
+            refreshWatchlist();
+            // 重新渲染当前搜索结果（让刚才点击的按钮变成“已添加”状态）
+            renderSearchResults(window.suggestdata);
+        }
+
+        // ================= 个人推演模块 =================
+        function saveParams() {
+            const params = { code: document.getElementById('stockCode').value.trim(), cost: document.getElementById('cost').value, shares: document.getElementById('shares').value, growth: document.getElementById('dailyGrowth').value };
+            localStorage.setItem('stockAppParams', JSON.stringify(params));
+            return params;
+        }
+
         function loadSavedParams() {
             const saved = localStorage.getItem('stockAppParams');
             if (saved) {
@@ -197,118 +315,74 @@
             }
         }
 
-        // 保存当前参数到手机本地
-        function saveParams() {
-            const params = {
-                code: document.getElementById('stockCode').value.trim(),
-                cost: document.getElementById('cost').value,
-                shares: document.getElementById('shares').value,
-                growth: document.getElementById('dailyGrowth').value
-            };
-            localStorage.setItem('stockAppParams', JSON.stringify(params));
-            return params;
+        function jumpToPersonal(code) { 
+            document.getElementById('searchResults').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+            document.getElementById('stockCode').value = code; 
+            switchTab('personal'); 
         }
 
-        // 2. 数据获取逻辑
-        function fetchStockData(code) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = `https://qt.gtimg.cn/q=${code}`;
-                script.onload = () => {
-                    const dataStr = window[`v_${code}`];
-                    if (dataStr) {
-                        const parts = dataStr.split('~');
-                        resolve(parseFloat(parts[3])); // 腾讯接口当前价
-                    } else {
-                        reject('未能获取到该代码的数据');
-                    }
-                    document.head.removeChild(script);
-                };
-                script.onerror = () => reject('网络请求失败');
-                document.head.appendChild(script);
-            });
-        }
-
-        function formatNum(num) {
-            return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        function getColorClass(value) {
-            if (value > 0) return 'text-red';
-            if (value < 0) return 'text-green';
-            return '';
-        }
-
-        // 3. 主计算与渲染逻辑
-        async function refreshData() {
-            const btn = document.getElementById('refreshBtn');
-            btn.innerText = "⏳ 正在获取...";
-            btn.style.opacity = "0.7";
-
-            const params = saveParams(); // 每次刷新都自动保存参数
-            const cost = parseFloat(params.cost);
-            const shares = parseFloat(params.shares);
-            const growthRate = parseFloat(params.growth) / 100;
-
+        async function refreshPersonal() {
+            const params = saveParams(); const cost = parseFloat(params.cost); const shares = parseFloat(params.shares); const growthRate = parseFloat(params.growth) / 100; const code = params.code;
+            if(!code) return;
             try {
-                const realPrice = await fetchStockData(params.code);
+                const res = await fetch(`https://qt.gtimg.cn/q=${code}&t=${new Date().getTime()}`);
+                const parts = (await res.text()).split('~');
+                if (parts.length < 10) return;
+                const realPrice = parseFloat(parts[3]); const marketValue = realPrice * shares; const profit = marketValue - cost; const profitRate = (profit / cost) * 100; const breakevenPrice = cost / shares;
                 
-                // 实时数据计算
-                const marketValue = realPrice * shares;
-                const profit = marketValue - cost;
-                const profitRate = (profit / cost) * 100;
-                const breakevenPrice = cost / shares;
+                document.getElementById('currentPrice').innerText = realPrice.toFixed(2); document.getElementById('breakevenPrice').innerText = breakevenPrice.toFixed(2); document.getElementById('marketValue').innerText = formatNum(marketValue);
+                const profitEl = document.getElementById('profit'); profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit); profitEl.className = 'value ' + (profit > 0 ? 'text-red' : (profit < 0 ? 'text-green' : ''));
+                const rateEl = document.getElementById('profitRate'); rateEl.innerText = (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%'; rateEl.className = 'rate-badge ' + (profitRate > 0 ? 'text-red' : (profitRate < 0 ? 'text-green' : ''));
+                if(profitRate > 0) rateEl.style.backgroundColor = 'rgba(255, 59, 48, 0.1)'; else if(profitRate < 0) rateEl.style.backgroundColor = 'rgba(52, 199, 89, 0.1)';
 
-                // 渲染实时看板
-                document.getElementById('currentPrice').innerText = realPrice.toFixed(2);
-                document.getElementById('breakevenPrice').innerText = breakevenPrice.toFixed(2);
-                document.getElementById('marketValue').innerText = formatNum(marketValue);
-                
-                const profitEl = document.getElementById('profit');
-                profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit);
-                profitEl.className = 'value ' + getColorClass(profit);
-                
-                const rateEl = document.getElementById('profitRate');
-                rateEl.innerText = (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
-                rateEl.className = 'rate-badge ' + getColorClass(profitRate);
-                if(profitRate > 0) { rateEl.style.backgroundColor = 'rgba(255, 59, 48, 0.1)'; }
-                else if(profitRate < 0) { rateEl.style.backgroundColor = 'rgba(52, 199, 89, 0.1)'; }
-
-                // 渲染推演表
-                const tbody = document.getElementById('projectionTable');
-                tbody.innerHTML = ''; 
-                
-                let currentProjPrice = realPrice;
+                const tbody = document.getElementById('projectionTable'); tbody.innerHTML = ''; let currentProjPrice = realPrice;
                 for (let i = 1; i <= 10; i++) {
-                    let prevValue = currentProjPrice * shares;
-                    if (i > 1) { currentProjPrice = currentProjPrice * (1 + growthRate); }
-                    
-                    let currentValue = currentProjPrice * shares;
-                    let dailyProfit = i === 1 ? profit : (currentValue - prevValue); 
-
+                    let prevValue = currentProjPrice * shares; if (i > 1) { currentProjPrice = currentProjPrice * (1 + growthRate); }
+                    let currentValue = currentProjPrice * shares; let dailyProfit = i === 1 ? profit : (currentValue - prevValue); 
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="color:var(--text-muted); font-weight:500;">T+${i-1}</td>
-                        <td style="font-weight:600;">${currentProjPrice.toFixed(2)}</td>
-                        <td>${formatNum(currentValue)}</td>
-                        <td class="${getColorClass(dailyProfit)}" style="font-weight:600;">
-                            ${dailyProfit > 0 ? '+' : ''}${formatNum(dailyProfit)}
-                        </td>
-                    `;
+                    tr.innerHTML = `<td style="color:var(--text-muted); font-weight:500;">T+${i-1}</td><td style="font-weight:600;">${currentProjPrice.toFixed(2)}</td><td>${formatNum(currentValue)}</td><td class="${dailyProfit > 0 ? 'text-red' : (dailyProfit < 0 ? 'text-green' : '')}" style="font-weight:600;">${dailyProfit > 0 ? '+' : ''}${formatNum(dailyProfit)}</td>`;
                     tbody.appendChild(tr);
                 }
-
-            } catch (error) {
-                alert("获取失败: 请检查网络或股票代码 (需带前缀如 sh600481)");
-            } finally {
-                btn.innerText = "⚡️ 获取实时行情";
-                btn.style.opacity = "1";
-            }
+            } catch (e) {}
         }
 
-        // 初始化
-        loadSavedParams();
-        refreshData();
+        // ================= 自选股模块 =================
+        function removeStock(code) { watchlist = watchlist.filter(c => c !== code); localStorage.setItem('myWatchlist', JSON.stringify(watchlist)); refreshWatchlist(); }
+
+        async function refreshWatchlist() {
+            if (watchlist.length === 0) { document.getElementById('watchlist-container').innerHTML = '<div style="padding:20px;text-align:center;color:#8e8e93;">暂无自选股票，请在上方搜索添加</div>'; return; }
+            try {
+                const res = await fetch(`https://qt.gtimg.cn/q=${watchlist.join(',')}&t=${new Date().getTime()}`);
+                const stockDatas = (await res.text()).split(';').filter(s => s.trim().length > 0);
+                let htmlStr = '';
+                stockDatas.forEach(item => {
+                    const parts = item.split('~'); if (parts.length < 32) return;
+                    const name = parts[1]; const codeMatch = item.match(/v_(.*?)="/); const code = codeMatch ? codeMatch[1] : parts[2]; 
+                    const price = parseFloat(parts[3]).toFixed(2); const changePercent = parseFloat(parts[32]);
+                    let colorClass = 'bg-gray'; let textClass = ''; let displayPercent = changePercent.toFixed(2) + '%';
+                    if (changePercent > 0) { colorClass = 'bg-red'; textClass = 'text-red'; displayPercent = '+' + displayPercent; } else if (changePercent < 0) { colorClass = 'bg-green'; textClass = 'text-green'; }
+                    htmlStr += `<div class="wl-item" onclick="jumpToPersonal('${code}')"><div class="wl-left"><div class="wl-name">${name}</div><div class="wl-code">${code.toUpperCase()}</div></div><div class="wl-mid ${textClass}">${price}</div><div class="wl-right"><div class="wl-badge ${colorClass}">${displayPercent}</div></div><div class="wl-delete" onclick="event.stopPropagation(); removeStock('${code}')">×</div></div>`;
+                });
+                document.getElementById('watchlist-container').innerHTML = htmlStr;
+            } catch (e) {}
+        }
+
+        // ================= 初始化 =================
+        loadSavedParams(); refreshPersonal(); refreshWatchlist();
+        
+        document.addEventListener('click', function(event) {
+            const searchContainer = document.querySelector('.search-container');
+            if (!searchContainer.contains(event.target)) {
+                document.getElementById('searchResults').classList.remove('active');
+            }
+        });
+
+        setInterval(() => {
+            if (activeTab === 'personal') refreshPersonal();
+            else if (activeTab === 'watchlist') refreshWatchlist();
+        }, 3000);
+
     </script>
 </body>
 </html>
