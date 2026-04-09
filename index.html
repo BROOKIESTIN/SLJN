@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="持仓看板">
+    <title>私人持仓推演</title>
+    <style>
+        :root {
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-main: #1c1c1e;
+            --text-muted: #8e8e93;
+            --red-up: #ff3b30; /* iOS 系统红 */
+            --green-down: #34c759; /* iOS 系统绿 */
+            --blue-btn: #007aff;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            padding: 20px 16px env(safe-area-inset-bottom) 16px; 
+            color: var(--text-main); 
+        }
+
+        /* 顶部安全区域适配，防止被刘海遮挡 */
+        .header-spacer { height: env(safe-area-inset-top); margin-bottom: 10px; }
+
+        .card { 
+            background: var(--card-bg); 
+            border-radius: 16px; 
+            padding: 20px; 
+            margin-bottom: 16px; 
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04); 
+        }
+
+        h2 { 
+            margin: 0 0 16px 0; 
+            font-size: 18px; 
+            font-weight: 600; 
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 12px 0;
+            border-bottom: 0.5px solid #e5e5ea;
+        }
+        .input-group:last-child { border-bottom: none; padding-bottom: 0; }
+        .input-group label { font-size: 15px; color: var(--text-main); font-weight: 500;}
+        .input-group input { 
+            width: 140px; 
+            padding: 8px 12px; 
+            background: #f2f2f7;
+            border: none; 
+            border-radius: 8px; 
+            text-align: right; 
+            font-size: 16px;
+            font-weight: 600;
+            outline: none;
+        }
+        .input-group input:focus { background: #e5e5ea; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-box { 
+            background: rgba(242, 242, 247, 0.6); 
+            padding: 16px; 
+            border-radius: 12px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-box .label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; }
+        .stat-box .value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+
+        .text-red { color: var(--red-up); }
+        .text-green { color: var(--green-down); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; text-align: right; }
+        th { color: var(--text-muted); font-weight: 500; padding-bottom: 12px; border-bottom: 0.5px solid #e5e5ea; font-size: 12px;}
+        td { padding: 12px 0; border-bottom: 0.5px solid #f2f2f7; font-variant-numeric: tabular-nums; }
+        tr:last-child td { border-bottom: none; }
+        th:first-child, td:first-child { text-align: left; }
+
+        button { 
+            width: 100%; 
+            background: var(--blue-btn); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 14px; 
+            font-size: 17px; 
+            font-weight: 600;
+            margin-top: 8px; 
+            cursor: pointer; 
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+        button:active { opacity: 0.7; }
+        
+        .rate-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            background: #f2f2f7;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-spacer"></div>
+
+    <div class="card">
+        <h2>⚙️ 参数设置</h2>
+        <div class="input-group">
+            <label>股票代码</label>
+            <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
+        </div>
+        <div class="input-group">
+            <label>初始总成本</label>
+            <input type="number" id="cost" value="385000">
+        </div>
+        <div class="input-group">
+            <label>持仓股数</label>
+            <input type="number" id="shares" value="26200">
+        </div>
+        <div class="input-group">
+            <label>预期日涨幅(%)</label>
+            <input type="number" id="dailyGrowth" value="10" step="0.1">
+        </div>
+    </div>
+
+    <button id="refreshBtn" onclick="refreshData()">⚡️ 获取实时行情</button>
+
+    <div class="card" style="margin-top: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0;">📊 实时看板</h2>
+            <div id="profitRate" class="rate-badge">--</div>
+        </div>
+        
+        <div class="grid-2">
+            <div class="stat-box">
+                <div class="label">最新股价</div>
+                <div class="value" id="currentPrice">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">当前市值</div>
+                <div class="value" id="marketValue">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">回本股价</div>
+                <div class="value" id="breakevenPrice">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">浮动盈亏</div>
+                <div class="value" id="profit">--</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📈 T+10 预期推演</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>交易日</th>
+                    <th>预期股价</th>
+                    <th>预期市值</th>
+                    <th>单日浮动</th>
+                </tr>
+            </thead>
+            <tbody id="projectionTable">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 1. 本地存储逻辑：初始化时加载上次保存的数据
+        function loadSavedParams() {
+            const saved = localStorage.getItem('stockAppParams');
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.code) document.getElementById('stockCode').value = data.code;
+                if (data.cost) document.getElementById('cost').value = data.cost;
+                if (data.shares) document.getElementById('shares').value = data.shares;
+                if (data.growth) document.getElementById('dailyGrowth').value = data.growth;
+            }
+        }
+
+        // 保存当前参数到手机本地
+        function saveParams() {
+            const params = {
+                code: document.getElementById('stockCode').value.trim(),
+                cost: document.getElementById('cost').value,
+                shares: document.getElementById('shares').value,
+                growth: document.getElementById('dailyGrowth').value
+            };
+            localStorage.setItem('stockAppParams', JSON.stringify(params));
+            return params;
+        }
+
+        // 2. 数据获取逻辑
+        function fetchStockData(code) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = `https://qt.gtimg.cn/q=${code}`;
+                script.onload = () => {
+                    const dataStr = window[`v_${code}`];
+                    if (dataStr) {
+                        const parts = dataStr.split('~');
+                        resolve(parseFloat(parts[3])); // 腾讯接口当前价
+                    } else {
+                        reject('未能获取到该代码的数据');
+                    }
+                    document.head.removeChild(script);
+                };
+                script.onerror = () => reject('网络请求失败');
+                document.head.appendChild(script);
+            });
+        }
+
+        function formatNum(num) {
+            return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function getColorClass(value) {
+            if (value > 0) return 'text-red';
+            if (value < 0) return 'text-green';
+            return '';
+        }
+
+        // 3. 主计算与渲染逻辑
+        async function refreshData() {
+            const btn = document.getElementById('refreshBtn');
+            btn.innerText = "⏳ 正在获取...";
+            btn.style.opacity = "0.7";
+
+            const params = saveParams(); // 每次刷新都自动保存参数
+            const cost = parseFloat(params.cost);
+            const shares = parseFloat(params.shares);
+            const growthRate = parseFloat(params.growth) / 100;
+
+            try {
+                const realPrice = await fetchStockData(params.code);
+                
+                // 实时数据计算
+                const marketValue = realPrice * shares;
+                const profit = marketValue - cost;
+                const profitRate = (profit / cost) * 100;
+                const breakevenPrice = cost / shares;
+
+                // 渲染实时看板
+                document.getElementById('currentPrice').innerText = realPrice.toFixed(2);
+                document.getElementById('breakevenPrice').innerText = breakevenPrice.toFixed(2);
+                document.getElementById('marketValue').innerText = formatNum(marketValue);
+                
+                const profitEl = document.getElementById('profit');
+                profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit);
+                profitEl.className = 'value ' + getColorClass(profit);
+                
+                const rateEl = document.getElementById('profitRate');
+                rateEl.innerText = (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
+                rateEl.className = 'rate-badge ' + getColorClass(profitRate);
+                if(profitRate > 0) { rateEl.style.backgroundColor = 'rgba(255, 59, 48, 0.1)'; }
+                else if(profitRate < 0) { rateEl.style.backgroundColor = 'rgba(52, 199, 89, 0.1)'; }
+
+                // 渲染推演表
+                const tbody = document.getElementById('projectionTable');
+                tbody.innerHTML = ''; 
+                
+                let currentProjPrice = realPrice;
+                for (let i = 1; i <= 10; i++) {
+                    let prevValue = currentProjPrice * shares;
+                    if (i > 1) { currentProjPrice = currentProjPrice * (1 + growthRate); }
+                    
+                    let currentValue = currentProjPrice * shares;
+                    let dailyProfit = i === 1 ? profit : (currentValue - prevValue); 
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="color:var(--text-muted); font-weight:500;">T+${i-1}</td>
+                        <td style="font-weight:600;">${currentProjPrice.toFixed(2)}</td>
+                        <td>${formatNum(currentValue)}</td>
+                        <td class="${getColorClass(dailyProfit)}" style="font-weight:600;">
+                            ${dailyProfit > 0 ? '+' : ''}${formatNum(dailyProfit)}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+
+            } catch (error) {
+                alert("获取失败: 请检查网络或股票代码 (需带前缀如 sh600481)");
+            } finally {
+                btn.innerText = "⚡️ 获取实时行情";
+                btn.style.opacity = "1";
+            }
+        }
+
+        // 初始化
+        loadSavedParams();
+        refreshData();
+    </script>
+</body>
+</html>
