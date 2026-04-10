@@ -21,51 +21,55 @@
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* 锁死视口，消除页面整体滑动 */
+        /* 锁死视口，利用 Flex 纵向分割屏幕：内容区 + 底部指示器区 */
         html, body { 
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             margin: 0; padding: 0; 
             background-color: var(--bg-color); 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; 
             color: var(--text-main); 
+            display: flex; flex-direction: column;
         }
 
-        /* ====== 核心：左右滑动容器 (CSS Scroll Snap) ====== */
+        /* ====== 上半部分：左右滑动容器 ====== */
         .swipe-container {
+            flex: 1; /* 占据除了底部指示器之外的所有高度 */
             display: flex;
             width: 100vw;
-            height: 100dvh;
             overflow-x: auto;
             overflow-y: hidden;
-            scroll-snap-type: x mandatory; /* 开启强制分页吸附 */
+            scroll-snap-type: x mandatory; 
             scroll-behavior: smooth;
         }
-        /* 隐藏水平滚动条 */
         .swipe-container::-webkit-scrollbar { display: none; }
 
-        /* ====== 单个页面布局：自适应撑满 ====== */
+        /* ====== 单个页面布局 ====== */
         .page {
-            width: 100vw; height: 100dvh;
+            width: 100vw; height: 100%;
             flex-shrink: 0;
-            scroll-snap-align: start; /* 分页对齐点 */
+            scroll-snap-align: start; 
             display: flex; flex-direction: column;
-            padding: env(safe-area-inset-top) 16px calc(30px + env(safe-area-inset-bottom)) 16px;
-            /* 如果内容实在太多，允许单页内垂直滚动 */
-            overflow-y: auto;
+            /* 取消原本夸张的底部 padding，因为指示器已经不在悬浮层了 */
+            padding: env(safe-area-inset-top) 16px 10px 16px;
         }
 
-        /* ====== 卡片与通用组件放大化 ====== */
+        /* ====== 卡片与通用组件 ====== */
         .card { 
             background: var(--card-bg); border-radius: 16px; 
-            padding: 24px 20px; /* 内边距加大 */
-            margin-bottom: 20px; /* 间距加大 */
+            padding: 24px 20px; 
+            margin-bottom: 20px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
             display: flex; flex-direction: column;
+            flex-shrink: 0;
         }
-        /* 让指定的卡片拉伸填满剩余空间 */
-        .card.fill-screen { flex: 1; margin-bottom: 0; }
+        /* 让下方的卡片拉伸填满，但内部元素可以独立滚动 */
+        .card.fill-screen { 
+            flex: 1; 
+            margin-bottom: 0; 
+            min-height: 0; /* Flex 布局核心：防止子元素把父级撑破屏幕 */
+        }
 
-        h2 { margin: 0 0 20px 0; font-size: 19px; font-weight: 600; letter-spacing: -0.2px; display: flex; align-items: center; justify-content: space-between; }
+        h2 { margin: 0 0 20px 0; font-size: 19px; font-weight: 600; letter-spacing: -0.2px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 
         .input-group { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 0.5px solid var(--separator); }
         .input-group:last-child { border-bottom: none; padding-bottom: 0; }
@@ -85,14 +89,14 @@
         }
         button.main-btn:active { opacity: 0.8; }
 
-        /* ====== 实时看板格子自适应拉伸 ====== */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; }
+        /* ====== 实时看板格子 ====== */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
         .stat-box { 
             background: rgba(245, 245, 247, 0.8); border-radius: 12px; 
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
         .stat-box .label { font-size: 14px; color: var(--text-muted); font-weight: 500; margin-bottom: 8px; }
-        .stat-box .value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; } /* 数字显著放大 */
+        .stat-box .value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
 
         .text-red { color: var(--red-up); }
         .text-green { color: var(--green-down); }
@@ -102,7 +106,14 @@
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(67, 160, 71, 0.5); } 70% { box-shadow: 0 0 0 8px rgba(67, 160, 71, 0); } 100% { box-shadow: 0 0 0 0 rgba(67, 160, 71, 0); } }
 
         /* ====== T+10 表格优化 ====== */
-        .table-wrapper { flex: 1; overflow-y: auto; margin-top: 10px; } /* 表格内部支持独立滚动 */
+        .table-wrapper { 
+            flex: 1; 
+            overflow-y: auto; /* 核心：让表格自己在卡片内部滚动 */
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px; 
+            min-height: 0; 
+            padding-bottom: 10px;
+        }
         table { width: 100%; border-collapse: collapse; font-size: 15px; text-align: right; }
         th { color: var(--text-muted); font-weight: 500; padding-bottom: 14px; border-bottom: 0.5px solid var(--separator); font-size: 13px; position: sticky; top: 0; background: var(--card-bg); z-index: 10; }
         td { padding: 14px 0; border-bottom: 0.5px solid #f5f5f7; vertical-align: middle; }
@@ -116,10 +127,14 @@
         }
         .tbl-input:focus { border-color: var(--blue-btn); background: #f5f5f7; }
 
-        /* ====== 底部小圆点指示器 ====== */
+        /* ====== 下半部分：专属的底部指示器区域 (绝对不再重叠) ====== */
         .pagination {
-            position: fixed; bottom: calc(10px + env(safe-area-inset-bottom)); left: 0; width: 100%;
-            display: flex; justify-content: center; gap: 8px; z-index: 50; pointer-events: none;
+            width: 100%;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            /* 上下留出空间，底部加上安全区缓冲 */
+            padding: 12px 0 calc(16px + env(safe-area-inset-bottom)) 0;
+            background: var(--bg-color);
+            flex-shrink: 0; /* 保证指示器区域高度恒定，不会被挤压 */
         }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.15); transition: all 0.3s; }
         .dot.active { background: var(--blue-btn); width: 18px; border-radius: 4px; }
@@ -241,7 +256,6 @@
         const container = document.getElementById('swipeContainer');
         const dots = document.querySelectorAll('.dot');
         container.addEventListener('scroll', () => {
-            // 根据滚动距离计算当前页码 (0 或 1)
             let pageIndex = Math.round(container.scrollLeft / window.innerWidth);
             dots.forEach((dot, index) => {
                 dot.classList.toggle('active', index === pageIndex);
@@ -283,7 +297,7 @@
             return params;
         }
 
-        // ================= 核心推演引擎 (超级联动) =================
+        // ================= 核心推演引擎 =================
         function initTableDOM() {
             const tbody = document.getElementById('projectionTable');
             tbody.innerHTML = '';
