@@ -158,7 +158,7 @@
                         <span id="dailyChangeRate" style="margin-left: 10px; font-size: 15px; font-weight: 700;">--</span>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <button class="chart-btn" onclick="openChart()">行情走势</button>
+                        <button class="chart-btn" onclick="openChart()">K线图</button>
                         <div id="profitRate" class="rate-badge">--</div>
                     </div>
                 </h2>
@@ -170,7 +170,7 @@
                     <div class="stat-box"><div class="label">今日涨跌</div><div class="value" id="dailyChangeValue">--</div></div>
                     <div class="stat-box"><div class="label">当日收益</div><div class="value" id="dailyProfit">--</div></div>
                     
-                    <div class="stat-box"><div class="label">回本股价</div><div class="value" id="breakevenPrice">--</div></div>
+                    <div class="stat-box"><div class="label">成本股价</div><div class="value" id="breakevenPrice">--</div></div>
                     <div class="stat-box"><div class="label">总浮动盈亏</div><div class="value" id="profit">--</div></div>
                 </div>
             </div>
@@ -296,7 +296,6 @@
             }
         }
 
-        // ======= 核心：更新看板模块数据 =======
         function updateDashboard(shares, cost) {
             const marketValue = basePrice * shares;
             const profit = marketValue - cost;
@@ -311,8 +310,9 @@
             profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit);
             profitEl.className = 'value ' + getColorClass(profit);
             
+            // 核心修改：为收益率加上文字，消除歧义
             const rateEl = document.getElementById('profitRate');
-            rateEl.innerText = (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
+            rateEl.innerText = '收益率 ' + (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
             rateEl.className = 'rate-badge ' + getColorClass(profitRate);
             if(profitRate > 0) { rateEl.style.backgroundColor = 'rgba(229, 57, 53, 0.1)'; }
             else if(profitRate < 0) { rateEl.style.backgroundColor = 'rgba(67, 160, 71, 0.1)'; }
@@ -328,14 +328,12 @@
             runProjectionEngine();
         }
 
-        // ======= 核心：股数变动 -> 更新市值框 =======
         function recalcBase() {
             saveParams();
             const cost = parseFloat(document.getElementById('cost').value) || 0;
             const shares = parseFloat(document.getElementById('shares').value) || 0;
             
             if (basePrice > 0) {
-                // 如果当前焦点不在“持股市值”输入框上，就自动用 现价*股数 覆盖它
                 if (document.activeElement.id !== 'marketValueInput') {
                     document.getElementById('marketValueInput').value = (basePrice * shares).toFixed(2);
                 }
@@ -343,11 +341,9 @@
             }
         }
 
-        // ======= 核心：市值变动 -> 反推股数 =======
         function recalcFromMarketValue() {
             if (basePrice > 0) {
                 const mv = parseFloat(document.getElementById('marketValueInput').value) || 0;
-                // 反推对应股数 (向下取整)
                 const newShares = Math.round(mv / basePrice);
                 document.getElementById('shares').value = newShares;
                 saveParams();
