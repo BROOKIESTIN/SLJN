@@ -136,7 +136,7 @@
                 </div>
                 <div class="input-group">
                     <label>成本金额</label>
-                    <input type="number" id="cost" value="419200" oninput="recalcBase()">
+                    <input type="number" id="cost" value="419200" onfocus="onCostFocus()" onblur="onCostBlur()">
                 </div>
                 <div class="input-group">
                     <label>持仓股数</label>
@@ -278,30 +278,47 @@
             return params;
         }
 
-        // ======= 核心新增：自动加仓核算逻辑 =======
-        let focusedShares = 0; // 记录你点击输入框前的原始股数
+        // ======= 双向闭环核算引擎 =======
         
+        let focusedShares = 0; 
+        let focusedCost = 0; // 记录修改前的成本金额
+
         function onSharesFocus() {
             focusedShares = parseFloat(document.getElementById('shares').value) || 0;
         }
 
         function onSharesBlur() {
             let currentShares = parseFloat(document.getElementById('shares').value) || 0;
-            // 只有当数字真的改变了，且网络已经拉取到了最新股价时，才触发智能核算
             if (currentShares !== focusedShares && basePrice > 0) {
-                let deltaShares = currentShares - focusedShares; // 计算出加了多少股（或卖了多少）
+                let deltaShares = currentShares - focusedShares; 
                 let currentCost = parseFloat(document.getElementById('cost').value) || 0;
-                
-                // 按当前最新市价，自动算出新增或减少的成本
                 let newCost = currentCost + (deltaShares * basePrice);
-                
-                // 覆盖到【成本金额】框内
                 document.getElementById('cost').value = newCost.toFixed(2);
             }
-            // 修改完成后，统一触发全盘重新计算
             recalcBase();
         }
-        // =======================================
+
+        // 核心新增：成本金额失去焦点时，反向推算股数
+        function onCostFocus() {
+            focusedCost = parseFloat(document.getElementById('cost').value) || 0;
+        }
+
+        function onCostBlur() {
+            let currentCost = parseFloat(document.getElementById('cost').value) || 0;
+            let currentShares = parseFloat(document.getElementById('shares').value) || 0;
+            
+            // 当金额发生变化，且已经获取到最新股价时进行推演
+            if (currentCost !== focusedCost && basePrice > 0) {
+                let deltaCost = currentCost - focusedCost; // 计算加了多少资金
+                let deltaShares = Math.round(deltaCost / basePrice); // 资金对应的股数（四舍五入）
+                let newShares = currentShares + deltaShares;
+                
+                if(newShares < 0) newShares = 0; // 兜底防负数
+                document.getElementById('shares').value = newShares;
+            }
+            recalcBase();
+        }
+        // ===================================
 
         function initTableDOM() {
             const tbody = document.getElementById('projectionTable');
