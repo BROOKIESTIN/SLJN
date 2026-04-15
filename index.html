@@ -135,12 +135,12 @@
                     <input type="text" id="stockCode" value="sh600481" placeholder="例如 sh600481">
                 </div>
                 <div class="input-group">
-                    <label>初始总成本</label>
+                    <label>成本金额</label>
                     <input type="number" id="cost" value="419200" oninput="recalcBase()">
                 </div>
                 <div class="input-group">
                     <label>持仓股数</label>
-                    <input type="number" id="shares" value="26200" oninput="recalcBase()">
+                    <input type="number" id="shares" value="26200" onfocus="onSharesFocus()" onblur="onSharesBlur()">
                 </div>
                 <div class="input-group">
                     <label>持股市值</label>
@@ -278,6 +278,31 @@
             return params;
         }
 
+        // ======= 核心新增：自动加仓核算逻辑 =======
+        let focusedShares = 0; // 记录你点击输入框前的原始股数
+        
+        function onSharesFocus() {
+            focusedShares = parseFloat(document.getElementById('shares').value) || 0;
+        }
+
+        function onSharesBlur() {
+            let currentShares = parseFloat(document.getElementById('shares').value) || 0;
+            // 只有当数字真的改变了，且网络已经拉取到了最新股价时，才触发智能核算
+            if (currentShares !== focusedShares && basePrice > 0) {
+                let deltaShares = currentShares - focusedShares; // 计算出加了多少股（或卖了多少）
+                let currentCost = parseFloat(document.getElementById('cost').value) || 0;
+                
+                // 按当前最新市价，自动算出新增或减少的成本
+                let newCost = currentCost + (deltaShares * basePrice);
+                
+                // 覆盖到【成本金额】框内
+                document.getElementById('cost').value = newCost.toFixed(2);
+            }
+            // 修改完成后，统一触发全盘重新计算
+            recalcBase();
+        }
+        // =======================================
+
         function initTableDOM() {
             const tbody = document.getElementById('projectionTable');
             tbody.innerHTML = '';
@@ -310,7 +335,6 @@
             profitEl.innerText = (profit > 0 ? '+' : '') + formatNum(profit);
             profitEl.className = 'value ' + getColorClass(profit);
             
-            // 核心修改：为收益率加上文字，消除歧义
             const rateEl = document.getElementById('profitRate');
             rateEl.innerText = '收益率 ' + (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
             rateEl.className = 'rate-badge ' + getColorClass(profitRate);
